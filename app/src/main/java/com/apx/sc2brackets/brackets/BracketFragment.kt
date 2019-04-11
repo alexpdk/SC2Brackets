@@ -20,25 +20,37 @@ class BracketFragment : Fragment() {
 
     private var listener: OnMatchInteractionListener? = null
 
+    //TODO: on screen rotation this reference is lost, need a way to correctly store/pass it
+    var sharedRecycledViewPool: RecyclerView.RecycledViewPool? =null
+    private val timeFilter: MatchBracket.TimeFilter? by lazy {
+        arguments?.get(BRACKET_TIME_FILTER) as MatchBracket.TimeFilter
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.match_item_list, container, false)
+        val view = inflater.inflate(R.layout.fragment_bracket, container, false)
 
         // Set the adapter
         if (view is RecyclerView) {
             with(view) {
-                layoutManager = LinearLayoutManager(context)
+                layoutManager = LinearLayoutManager(context).apply {
+                    //viewHolders from detached layout are immediately available to other RecycledViews
+                    //https@ //medium.com/@thagikura/reduce-the-number-of-inflation-of-viewholders-drastically-by-sharing-a-viewpool-across-multiple-249d5fc6d28
+                    recycleChildrenOnDetach = true
+                }
                 adapter =
                     BracketRecyclerViewAdapter(
                         MatchBracket.DEFAULT_TOURNAMENT,
+                        timeFilter,
                         context,
                         listener
                     )
                 //disable item blinking on expand/collapse
                 //source: https://medium.com/@nikola.jakshic/how-to-expand-collapse-items-in-recyclerview-49a648a403a6
                 (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+                setRecycledViewPool(sharedRecycledViewPool)
             }
         }
         return view
@@ -67,15 +79,17 @@ class BracketFragment : Fragment() {
         fun onMatchSelect(item: Match?)
     }
 
-/*    companion object {
-        const val ARG_COLUMN_COUNT = "column-count"
+    companion object {
+        const val BRACKET_TIME_FILTER = "BRACKET_TIME_FILTER"
 
-        @JvmStatic
-        fun newInstance(columnCount: Int) =
-            BracketFragment().apply {
-                arguments = Bundle().apply {
-                    putInt(ARG_COLUMN_COUNT, columnCount)
-                }
+        fun newInstance(timeFilter: MatchBracket.TimeFilter? = null): BracketFragment{
+            val args = Bundle()
+            timeFilter?.let {
+                args.putSerializable(BRACKET_TIME_FILTER, timeFilter)
             }
-    }*/
+            val fragment = BracketFragment()
+            fragment.arguments = args
+            return fragment
+        }
+    }
 }

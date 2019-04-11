@@ -24,6 +24,7 @@ private const val TAG = "BracketViewAdapter"
  */
 class BracketRecyclerViewAdapter(
     private val bracket: MatchBracket,
+    private val timeFilter: MatchBracket.TimeFilter?,
     context: Context,
     private val interactionListener: OnMatchInteractionListener?
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -46,9 +47,8 @@ class BracketRecyclerViewAdapter(
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        Log.i(TAG, "Bind position = $position")
 
-        val bracketItem = bracket[position]
+        val bracketItem = bracket.filter(timeFilter)[position]
         when (bracketItem) {
             is Match -> {
                 val mvHolder = holder as MatchViewHolder
@@ -68,13 +68,13 @@ class BracketRecyclerViewAdapter(
         }
     }
 
-    override fun getItemCount(): Int = bracket.list.size
+    override fun getItemCount(): Int = bracket.filter(timeFilter).size
 
     /*Return layout id which will be used to render corresponding items*/
-    override fun getItemViewType(position: Int) = when (bracket[position]) {
+    override fun getItemViewType(position: Int) = when (bracket.filter(timeFilter)[position]) {
         is Match -> R.layout.match_item
         is MatchBracket.Header -> R.layout.bracket_header
-        else -> throw RuntimeException("Unknown type of item in MatchBracket: ${bracket[position].javaClass.name}")
+        else -> throw RuntimeException("Unknown type of item in MatchBracket: ${bracket.filter(timeFilter)[position].javaClass.name}")
     }
 
     class HeaderViewHolder(private val view: View) : RecyclerView.ViewHolder(view) {
@@ -131,7 +131,7 @@ class BracketRecyclerViewAdapter(
                 }
             )
             view.time_button?.apply {
-                text = "In 29m 15s"
+                text = match.countDown
                 paintFlags = paintFlags or Paint.UNDERLINE_TEXT_FLAG
             }
             view.match_details?.visibility = if (match.detailsExpanded) {
