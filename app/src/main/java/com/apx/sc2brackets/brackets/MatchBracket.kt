@@ -5,7 +5,7 @@ import org.joda.time.DateTime
 class MatchBracket(list: List<Match>) {
 
     private var matches = list.toMutableList()
-    private var listWithHeaders = addHeaders(matches)
+    private var listWithHeaders = addFooter(addHeaders(matches))
 
     /*
      * Logic is currently approximate and implemented for the sake of layout demonstration
@@ -14,6 +14,20 @@ class MatchBracket(list: List<Match>) {
     private var nextList = getNextList()
     private var pastList = getPastList()
     private var todayList = getTodayList()
+
+    private fun addFooter(list: List<BracketItem>): List<BracketItem>{
+        if(list.isEmpty()){
+            return list
+        }
+        val footer = Header(if(list.last() == matches.last()){
+            LAST_FOOTER_TEXT
+        }else{
+            FOOTER_TEXT
+        })
+        return list.toMutableList().apply {
+            add(footer)
+        }
+    }
 
     private fun addHeaders(list: List<Match>): List<BracketItem> {
         // group matches by category to be displayed under common header
@@ -45,18 +59,18 @@ class MatchBracket(list: List<Match>) {
     private fun getNextList(): List<BracketItem> {
         val nextDay = DateTime.now().plusDays(1)
         val list = matches.dropWhile { it.isBefore(nextDay) }
-        return addHeaders(list)
+        return addFooter(addHeaders(list))
     }
     private fun getPastList(): List<BracketItem> {
         val now = DateTime.now()
         val list = matches.takeWhile { it.isBefore(now) }
-        return addHeaders(list)
+        return addFooter(addHeaders(list))
     }
     private fun getTodayList(): List<BracketItem> {
         val now = DateTime.now()
         val nextDay = DateTime.now().plusDays(1)
         val list = matches.dropWhile { it.isBefore(now) }.takeWhile { it.isBefore(nextDay) }
-        return addHeaders(list)
+        return addFooter(addHeaders(list))
     }
 
     val list: List<BracketItem> get() = listWithHeaders
@@ -87,5 +101,7 @@ class MatchBracket(list: List<Match>) {
                 for (i in 9 until size) this[i].startTime = DateTime().plusDays(1).plusHours(1)
             }
         )
+        const val FOOTER_TEXT = "Swipe to see more matches"
+        const val LAST_FOOTER_TEXT = "End of the tournament"
     }
 }

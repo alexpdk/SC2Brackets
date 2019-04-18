@@ -12,29 +12,30 @@
             android:layout_height="wrap_content"
             app:srcCompat="@drawable/ic_protoss"
             app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginLeft="8dp"
-            android:layout_marginStart="8dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginStart="16dp"
             android:cropToPadding="false"
             android:adjustViewBounds="false"
             style="@android:style/Widget.DeviceDefault.ImageButton"
             android:background="@drawable/race_button"
             android:padding="3dp"
             android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/match_details_frame"
             android:layout_marginTop="8dp"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0"/>
 
     <TextView
             android:id="@+id/first_player_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceListItem"
-            android:text="Serral"
+            tools:text="Serral"
             app:layout_constraintStart_toEndOf="@+id/first_player_button"
             android:layout_marginTop="8dp"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/match_details_frame"
             android:layout_marginStart="8dp"
             android:layout_marginLeft="8dp"
             />
@@ -44,7 +45,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceListItem"
-            android:text="0:0"
+            tools:text="0:0"
             app:fontFamily="sans-serif-black"
             android:textSize="24sp"
             app:layout_constraintBaseline_toBaselineOf="@+id/first_player_name"
@@ -58,13 +59,13 @@
     <TextView
             android:id="@+id/second_player_name"
             android:layout_width="wrap_content"
-            android:layout_height="22dp"
+            android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceListItem"
-            android:text="ShowTime"
+            tools:text="ShowTime"
             android:layout_marginTop="8dp"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/match_details_frame"
             android:layout_marginEnd="8dp"
             app:layout_constraintEnd_toStartOf="@+id/second_player_button"
             android:layout_marginRight="8dp"/>
@@ -80,31 +81,23 @@
             android:background="@drawable/race_button"
             android:padding="3dp"
             android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/match_details_frame"
             android:layout_marginTop="8dp"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/time_button"
-            android:layout_marginEnd="8dp"
-            android:layout_marginRight="8dp"/>
-
-    <Button
-            android:text="In 29m 19s"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:id="@+id/time_button"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            style="@style/Widget.AppCompat.Button"
-            android:paddingBottom="6dp"
-            android:paddingTop="6dp"
-            android:minHeight="0dp"
-            android:textAppearance="@style/TextAppearance.AppCompat.Button"
-            android:layout_marginEnd="32dp"
+            android:layout_marginEnd="16dp"
             app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginRight="32dp"
-            android:background="#ffffff"/>
+            android:layout_marginRight="16dp"/>
+
+    <FrameLayout
+            android:id="@+id/match_details_frame"
+            android:layout_width="0dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:minHeight="0dp"
+            app:layout_constraintHorizontal_bias="0.0"
+            android:layout_height="wrap_content">
+    </FrameLayout>
 
 
 </android.support.constraint.ConstraintLayout>

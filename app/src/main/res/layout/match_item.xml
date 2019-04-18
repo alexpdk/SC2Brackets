@@ -20,7 +20,7 @@
             android:background="@drawable/race_button"
             android:padding="3dp"
             android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toTopOf="@id/match_details"
+            app:layout_constraintBottom_toTopOf="@id/match_details_frame"
             android:layout_marginTop="8dp"
             app:layout_constraintTop_toTopOf="parent"/>
 
@@ -29,12 +29,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceListItem"
-            android:text="Serral"
+            tools:text="Serral"
             app:layout_constraintStart_toEndOf="@+id/first_player_button"
             android:layout_marginTop="8dp"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toTopOf="@id/match_details"
+            app:layout_constraintBottom_toTopOf="@id/match_details_frame"
             android:layout_marginStart="8dp"
             android:layout_marginLeft="8dp"
             />
@@ -44,7 +44,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceListItem"
-            android:text="0:0"
+            tools:text="0:0"
             app:fontFamily="sans-serif-black"
             android:textSize="24sp"
             app:layout_constraintBaseline_toBaselineOf="@+id/first_player_name"
@@ -60,11 +60,11 @@
             android:layout_width="wrap_content"
             android:layout_height="22dp"
             android:textAppearance="?attr/textAppearanceListItem"
-            android:text="ShowTime"
+            tools:text="ShowTime"
             android:layout_marginTop="8dp"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toTopOf="@id/match_details"
+            app:layout_constraintBottom_toTopOf="@id/match_details_frame"
             android:layout_marginEnd="8dp"
             app:layout_constraintEnd_toStartOf="@+id/second_player_button"
             android:layout_marginRight="8dp"/>
@@ -80,16 +80,15 @@
             android:background="@drawable/race_button"
             android:padding="3dp"
             android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toTopOf="@id/match_details"
+            app:layout_constraintBottom_toTopOf="@id/match_details_frame"
             android:layout_marginTop="8dp"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_marginEnd="32dp"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginRight="32dp"/>
 
-    <LinearLayout
-            android:id="@+id/match_details"
-            android:orientation="vertical"
+    <FrameLayout
+            android:id="@+id/match_details_frame"
             android:layout_width="0dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -97,24 +96,7 @@
             android:minHeight="0dp"
             app:layout_constraintHorizontal_bias="0.0"
             android:layout_height="wrap_content">
-
-        <TextView
-                android:text="Here will go match details"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/match_details_header"
-                android:textSize="14sp"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:layout_marginEnd="8dp"
-                android:layout_marginRight="8dp"
-                app:layout_constraintStart_toStartOf="parent"
-                android:layout_marginLeft="8dp"
-                android:layout_marginStart="8dp"
-                app:layout_constraintTop_toTopOf="parent"
-                android:layout_marginTop="8dp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                android:layout_marginBottom="8dp"/>
-    </LinearLayout>
+    </FrameLayout>
 
 
 </android.support.constraint.ConstraintLayout>

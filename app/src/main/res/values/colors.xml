@@ -8,4 +8,8 @@
 
     <color name="bracketBackground">#F2F2F2</color>
     <color name="colorRaceButton">#009688</color>
+
+    <color name="terranColor">#1516ff</color>
+    <color name="zergColor">#ff2400</color>
+    <color name="protossColor">#8B7920</color>
 </resources>

@@ -1,7 +1,7 @@
 package com.apx.sc2brackets.brackets
 
 import android.content.Context
-import android.graphics.Paint
+import android.graphics.drawable.Drawable
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.RecyclerView
 import android.util.Log
@@ -12,8 +12,8 @@ import com.apx.sc2brackets.R
 
 import com.apx.sc2brackets.brackets.BracketFragment.OnMatchInteractionListener
 
-import kotlinx.android.synthetic.main.match_item.view.*
 import kotlinx.android.synthetic.main.bracket_header.view.*
+import kotlinx.android.synthetic.main.match_item.view.*
 import java.lang.RuntimeException
 
 private const val TAG = "BracketViewAdapter"
@@ -25,16 +25,16 @@ private const val TAG = "BracketViewAdapter"
 class BracketRecyclerViewAdapter(
     private val bracket: MatchBracket,
     private val timeFilter: MatchBracket.TimeFilter?,
-    context: Context,
+    private val context: Context,
+    override val loader: MyResourceLoader,
     private val interactionListener: OnMatchInteractionListener?
-) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>(), IBracketAdapter {
 
-    //load images in pre-21 api compatible way and store to reuse inside view-holders
-    private val terranLogo = ContextCompat.getDrawable(context, R.drawable.ic_terran)
-    private val protossLogo = ContextCompat.getDrawable(context, R.drawable.ic_protoss)
-    private val zergLogo = ContextCompat.getDrawable(context, R.drawable.ic_zerg)
+    override fun inflateLayout(cb: (LayoutInflater) -> Unit) {
+        cb(LayoutInflater.from(context))
+    }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder{
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         //viewType is layout item id
         val view = LayoutInflater.from(parent.context).inflate(viewType, parent, false)
         return when(viewType) {
@@ -47,11 +47,15 @@ class BracketRecyclerViewAdapter(
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-
         val bracketItem = bracket.filter(timeFilter)[position]
         when (bracketItem) {
             is Match -> {
                 val mvHolder = holder as MatchViewHolder
+                // check ViewHolder is completely recycled, not just rebound
+                // tag reference is manually reset inside onViewRecycled
+                if(mvHolder.view.tag == null){
+                    mvHolder.setAdapter(this)
+                }
                 mvHolder.display(bracketItem)
 
                 mvHolder.view.apply {
@@ -68,6 +72,16 @@ class BracketRecyclerViewAdapter(
         }
     }
 
+    override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
+        super.onViewRecycled(holder)
+        if(holder is MatchViewHolder){
+            holder.clearAdapter()
+            //Removing tag is important, it allows to define if ViewHolder was recycled or just rebound
+            holder.view.tag = null
+            holder.view.match_details_frame?.removeAllViews()
+        }
+    }
+
     override fun getItemCount(): Int = bracket.filter(timeFilter).size
 
     /*Return layout id which will be used to render corresponding items*/
@@ -77,68 +91,15 @@ class BracketRecyclerViewAdapter(
         else -> throw RuntimeException("Unknown type of item in MatchBracket: ${bracket.filter(timeFilter)[position].javaClass.name}")
     }
 
+    override fun selectMatch(match: Match) {
+        // Notify the active callbacks interface (the activity, if the fragment is attached to
+        // one) that an item has been selected.
+        interactionListener?.onMatchSelect(match)
+    }
+
     class HeaderViewHolder(private val view: View) : RecyclerView.ViewHolder(view) {
         fun display(header: MatchBracket.Header) {
             view.header_text.text = header.content
-        }
-    }
-
-    inner class MatchViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
-
-        private val onRaceButtonClick = { _: View ->
-            Log.i(TAG, "RaceButton clicked")
-            Unit
-        }
-
-        private val onViewClick = { v: View ->
-            Log.i(TAG, "Clicked view $v with id ${v.id}")
-            val item = v.tag as Match
-            item.detailsExpanded = !item.detailsExpanded
-
-            // Notify the active callbacks interface (the activity, if the fragment is attached to
-            // one) that an item has been selected.
-            interactionListener?.onMatchSelect(item)
-
-            // Notify adapter that item should be rebind with view after change
-            //TODO: study and use payload parameter for efficient rebind
-            notifyItemChanged(adapterPosition)
-        }
-
-        init {
-            view.setOnClickListener(onViewClick)
-            view.first_player_button.setOnClickListener(onRaceButtonClick)
-            view.second_player_button.setOnClickListener(onRaceButtonClick)
-        }
-
-        fun display(match: Match) {
-            //TODO: fix that binding cache is not used
-            //Detailed info: https://antonioleiva.com/kotlin-android-extensions/
-
-            view.first_player_name.text = match.firstPlayer
-            view.second_player_name.text = match.secondPlayer
-            view.match_score.text = match.score.run { "$first:$second" }
-
-            view.first_player_button.setImageDrawable(
-                when (match.races.first) {
-                    Match.Race.ZERG -> zergLogo
-                    Match.Race.PROTOSS -> protossLogo
-                }
-            )
-            view.second_player_button.setImageDrawable(
-                when (match.races.second) {
-                    Match.Race.ZERG -> zergLogo
-                    Match.Race.PROTOSS -> protossLogo
-                }
-            )
-            view.time_button?.apply {
-                text = match.countDown
-                paintFlags = paintFlags or Paint.UNDERLINE_TEXT_FLAG
-            }
-            view.match_details?.visibility = if (match.detailsExpanded) {
-                View.VISIBLE
-            } else {
-                View.GONE
-            }
         }
     }
 }

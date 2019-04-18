@@ -22,6 +22,7 @@ class BracketFragment : Fragment() {
 
     //TODO: on screen rotation this reference is lost, need a way to correctly store/pass it
     var sharedRecycledViewPool: RecyclerView.RecycledViewPool? =null
+
     private val timeFilter: MatchBracket.TimeFilter? by lazy {
         arguments?.get(BRACKET_TIME_FILTER) as MatchBracket.TimeFilter
     }
@@ -34,6 +35,7 @@ class BracketFragment : Fragment() {
 
         // Set the adapter
         if (view is RecyclerView) {
+            val loader = MyResourceLoader(context!!)
             with(view) {
                 layoutManager = LinearLayoutManager(context).apply {
                     //viewHolders from detached layout are immediately available to other RecycledViews
@@ -41,10 +43,12 @@ class BracketFragment : Fragment() {
                     recycleChildrenOnDetach = true
                 }
                 adapter =
+                    //TODO: do sth about these arguments
                     BracketRecyclerViewAdapter(
                         MatchBracket.DEFAULT_TOURNAMENT,
                         timeFilter,
                         context,
+                        loader,
                         listener
                     )
                 //disable item blinking on expand/collapse

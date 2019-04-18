@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                                             xmlns:app="http://schemas.android.com/apk/res-auto"
+                                             xmlns:tools="http://schemas.android.com/tools"
+                                             android:layout_width="match_parent"
+                                             android:layout_height="wrap_content">
+
+    <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:src="@drawable/ic_star"
+            android:id="@+id/first_player_mark"
+            android:background="@drawable/map_table_cell"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/map_name"/>
+
+    <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/map_name"
+            android:textSize="16sp"
+            tools:text="Name of the map"
+            android:textColor="@color/protossColor"
+            android:padding="5dp"
+            android:background="@drawable/map_table_cell_right"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/map_stats"
+            app:layout_constraintStart_toEndOf="@+id/first_player_mark"
+            android:textAllCaps="false"
+            android:textStyle="bold"
+            />
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/map_stats"
+            android:textSize="16sp"
+            tools:text="TvZ: 54.15%"
+            android:textColor="@android:color/black"
+            android:padding="5dp"
+            android:background="@drawable/map_table_cell_right"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/map_name"
+            app:layout_constraintEnd_toStartOf="@id/second_player_mark"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+    <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:src="@drawable/ic_almost_blank"
+            android:id="@+id/second_player_mark"
+            android:background="@drawable/map_table_cell_right"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/map_stats"/>
+
+</android.support.constraint.ConstraintLayout>
