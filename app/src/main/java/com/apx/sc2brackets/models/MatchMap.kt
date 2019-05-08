@@ -1,4 +1,4 @@
-package com.apx.sc2brackets.maps
+package com.apx.sc2brackets.models
 
 data class MatchMap(
     val name: String,
@@ -13,9 +13,18 @@ data class MatchMap(
 
     companion object {
         val DEFAULT_MAPS = listOf(
-            MatchMap(name = "Cyber Forest", winner = Result.FIRST),
-            MatchMap(name = "New Repugnancy", winner = Result.SECOND),
-            MatchMap(name = "Port Aleksander", winner = Result.FIRST)
+            MatchMap(
+                name = "Cyber Forest",
+                winner = Result.FIRST
+            ),
+            MatchMap(
+                name = "New Repugnancy",
+                winner = Result.SECOND
+            ),
+            MatchMap(
+                name = "Port Aleksander",
+                winner = Result.FIRST
+            )
 //            MatchMap(name = "Kairos Junction", winner = Result.SECOND)
         )
     }

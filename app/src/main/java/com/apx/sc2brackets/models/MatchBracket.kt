@@ -1,8 +1,9 @@
-package com.apx.sc2brackets.brackets
+package com.apx.sc2brackets.models
 
 import org.joda.time.DateTime
+import java.lang.StringBuilder
 
-class MatchBracket(list: List<Match>) {
+class MatchBracket(list: List<Match>, val isLoading: Boolean = false) {
 
     private var matches = list.toMutableList()
     private var listWithHeaders = addFooter(addHeaders(matches))
@@ -16,14 +17,14 @@ class MatchBracket(list: List<Match>) {
     private var todayList = getTodayList()
 
     private fun addFooter(list: List<BracketItem>): List<BracketItem>{
-        if(list.isEmpty()){
-            return list
-        }
-        val footer = Header(if(list.last() == matches.last()){
-            LAST_FOOTER_TEXT
-        }else{
-            FOOTER_TEXT
-        })
+        val footer = Header(
+            when{
+                isLoading -> LOADING_MATCHES_TEXT
+                list.isEmpty() -> NO_MATCHES_TEXT
+                list.last() == matches.last() -> LAST_FOOTER_TEXT
+                else -> FOOTER_TEXT
+            }
+        )
         return list.toMutableList().apply {
             add(footer)
         }
@@ -73,6 +74,8 @@ class MatchBracket(list: List<Match>) {
         return addFooter(addHeaders(list))
     }
 
+    fun isEmpty() = matches.isEmpty()
+
     val list: List<BracketItem> get() = listWithHeaders
 
     fun remove(match: Match) {
@@ -81,6 +84,18 @@ class MatchBracket(list: List<Match>) {
         nextList = getNextList()
         pastList = getPastList()
         todayList = getTodayList()
+    }
+
+    override fun toString(): String {
+        val b = StringBuilder("MatchBracket(")
+        if(list.isNotEmpty()){
+            b.append("Header = ${list[0]}")
+        }
+        if(matches.isNotEmpty()){
+            b.append("\nFirst match = ${matches[0]}")
+        }
+        b.append(")")
+        return b.toString()
     }
 
     interface BracketItem
@@ -103,5 +118,8 @@ class MatchBracket(list: List<Match>) {
         )
         const val FOOTER_TEXT = "Swipe to see more matches"
         const val LAST_FOOTER_TEXT = "End of the tournament"
+        const val NO_MATCHES_TEXT = "No matches in this category"
+        const val LOADING_MATCHES_TEXT = "Loading match data..."
+        val LOADING_BRACKET_STUB = MatchBracket(emptyList(), isLoading = true)
     }
 }

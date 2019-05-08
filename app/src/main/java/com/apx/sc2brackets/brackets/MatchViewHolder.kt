@@ -1,11 +1,11 @@
 package com.apx.sc2brackets.brackets
 
-import android.graphics.Paint
-import android.support.v7.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import com.apx.sc2brackets.R
+import com.apx.sc2brackets.models.Match
 
 import kotlinx.android.synthetic.main.match_details.view.*
 import kotlinx.android.synthetic.main.match_item.view.*
@@ -19,12 +19,19 @@ private const val TAG = "MatchViewHolder"
  * However, [MatchViewHolder] references [IBracketAdapter] object, responsible for performing context-dependent actions.
  * Reference is established via [setAdapter] method ans should be nullified as soon as ViewHolder is released after usage
  * in fragment with [clearAdapter].*/
-class MatchViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
+class MatchViewHolder(val view: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(view) {
 
     private var bracketAdapter: IBracketAdapter? = null
 
-    private val onRaceButtonClick = { _: View ->
+    private val onRaceButtonClick = { button: View ->
         Log.i(TAG, "RaceButton clicked")
+        val match = view.tag as Match
+        val player = if(button==view.first_player_button){
+            match.firstPlayer
+        }else{
+            match.secondPlayer
+        }
+        bracketAdapter?.interactionListener?.onPlayerSelect(player)
         Unit
     }
 
@@ -49,7 +56,7 @@ class MatchViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
     init {
         view.setOnClickListener(onViewClick)
         view.first_player_button.setOnClickListener(onRaceButtonClick)
-        view.second_player_button.setOnClickListener(onRaceButtonClick)
+        view.go_to_tournament.setOnClickListener(onRaceButtonClick)
     }
 
     fun clearAdapter() {
@@ -59,15 +66,15 @@ class MatchViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
     fun display(match: Match) {
         //TODO: fix that binding cache is not used
         //Detailed info: https://antonioleiva.com/kotlin-android-extensions/
-        view.first_player_name.text = match.firstPlayer
-        view.second_player_name.text = match.secondPlayer
+        view.first_player_name.text = match.firstPlayer.name
+        view.second_player_name.text = match.secondPlayer.name
         view.match_score.text = match.score.run { "$first:$second" }
 
         view.first_player_button.setImageDrawable(
-            bracketAdapter?.loader?.getRaceLogo(match.races.first)
+            bracketAdapter?.loader?.getRaceLogo(match.firstPlayer.race)
         )
-        view.second_player_button.setImageDrawable(
-            bracketAdapter?.loader?.getRaceLogo(match.races.second)
+        view.go_to_tournament.setImageDrawable(
+            bracketAdapter?.loader?.getRaceLogo(match.secondPlayer.race)
         )
 //        view.time_button?.apply {
 //            text = match.countDown
@@ -92,7 +99,7 @@ class MatchViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
                 linearLayout.time_button2.text = match.countDown
 
                 val mapList = linearLayout.map_result_table
-                for (map in match.getMaps()) {
+                for (map in match.maps) {
                     //attachToRoot = false is used to get rendered mapView instead of its parent as returned value
                     val mapViewHolder = MapViewHolder(
                         it.inflate(R.layout.map_result, mapList, false), bracketAdapter!!

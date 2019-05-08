@@ -1,8 +1,10 @@
 package com.apx.sc2brackets.brackets
 
+import com.apx.sc2brackets.models.Match
+import com.apx.sc2brackets.models.MatchBracket
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class MatchBracketTest {
     private val cases = mapOf(

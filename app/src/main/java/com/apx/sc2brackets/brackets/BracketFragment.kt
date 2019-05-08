@@ -2,14 +2,20 @@ package com.apx.sc2brackets.brackets
 
 import android.content.Context
 import android.os.Bundle
-import android.support.v4.app.Fragment
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
+import android.util.Log
+import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.support.v7.widget.SimpleItemAnimator
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
 import com.apx.sc2brackets.R
+import com.apx.sc2brackets.adapters.BracketRecyclerViewAdapter
+import com.apx.sc2brackets.models.MatchBracket
+import com.apx.sc2brackets.models.Player
+import com.apx.sc2brackets.view_models.TournamentViewModel
+
+private const val TAG = "BracketFragment"
 
 /**
  * A fragment representing a list of Items.
@@ -18,10 +24,10 @@ import com.apx.sc2brackets.R
  */
 class BracketFragment : Fragment() {
 
-    private var listener: OnMatchInteractionListener? = null
+    private var matchInteractionListener: OnMatchInteractionListener? = null
 
     //TODO: on screen rotation this reference is lost, need a way to correctly store/pass it
-    var sharedRecycledViewPool: RecyclerView.RecycledViewPool? =null
+    var sharedRecycledViewPool: androidx.recyclerview.widget.RecyclerView.RecycledViewPool? = null
 
     private val timeFilter: MatchBracket.TimeFilter? by lazy {
         arguments?.get(BRACKET_TIME_FILTER) as MatchBracket.TimeFilter
@@ -34,28 +40,33 @@ class BracketFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_bracket, container, false)
 
         // Set the adapter
-        if (view is RecyclerView) {
+        if (view is androidx.recyclerview.widget.RecyclerView) {
             val loader = MyResourceLoader(context!!)
+            //TODO: do sth about these arguments
+            val bracketAdapter = BracketRecyclerViewAdapter(
+                timeFilter,
+                context!!,
+                loader,
+                matchInteractionListener!!
+            )
             with(view) {
-                layoutManager = LinearLayoutManager(context).apply {
+                layoutManager = androidx.recyclerview.widget.LinearLayoutManager(context).apply {
                     //viewHolders from detached layout are immediately available to other RecycledViews
                     //https@ //medium.com/@thagikura/reduce-the-number-of-inflation-of-viewholders-drastically-by-sharing-a-viewpool-across-multiple-249d5fc6d28
                     recycleChildrenOnDetach = true
                 }
-                adapter =
-                    //TODO: do sth about these arguments
-                    BracketRecyclerViewAdapter(
-                        MatchBracket.DEFAULT_TOURNAMENT,
-                        timeFilter,
-                        context,
-                        loader,
-                        listener
-                    )
+                adapter = bracketAdapter
                 //disable item blinking on expand/collapse
                 //source: https://medium.com/@nikola.jakshic/how-to-expand-collapse-items-in-recyclerview-49a648a403a6
-                (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+                (itemAnimator as androidx.recyclerview.widget.SimpleItemAnimator).supportsChangeAnimations = false
                 setRecycledViewPool(sharedRecycledViewPool)
             }
+            //TournamentViewModel is properly initialized in BracketActivity and just passed here
+            val tournamentViewModel = ViewModelProviders.of(activity!!).get(TournamentViewModel::class.java)
+            tournamentViewModel.bracket.observe(this, Observer {
+                Log.i(TAG, "MatchBracket updated, new value = $it")
+                bracketAdapter.setBracket(it)
+            })
         }
         return view
     }
@@ -63,7 +74,7 @@ class BracketFragment : Fragment() {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         if (context is OnMatchInteractionListener) {
-            listener = context
+            matchInteractionListener = context
         } else {
             throw RuntimeException("$context must implement OnMatchInteractionListener")
         }
@@ -71,22 +82,17 @@ class BracketFragment : Fragment() {
 
     override fun onDetach() {
         super.onDetach()
-        listener = null
+        matchInteractionListener = null
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.*/
     interface OnMatchInteractionListener {
-        fun onMatchSelect(item: Match?)
+        fun onPlayerSelect(player: Player)
     }
 
     companion object {
         const val BRACKET_TIME_FILTER = "BRACKET_TIME_FILTER"
 
-        fun newInstance(timeFilter: MatchBracket.TimeFilter? = null): BracketFragment{
+        fun newInstance(timeFilter: MatchBracket.TimeFilter? = null): BracketFragment {
             val args = Bundle()
             timeFilter?.let {
                 args.putSerializable(BRACKET_TIME_FILTER, timeFilter)

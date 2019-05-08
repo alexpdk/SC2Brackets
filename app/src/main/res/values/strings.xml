@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">SC2 Brackets</string>
     <string name="action_settings">Settings</string>
-    <string name="text_box_edit_message">Player name</string>
-    <string name="button_search">Search</string>
     <string name="player_bio_mock">Greatest SC2 player of all time</string>
+    <string name="player_not_found_header">Sorry, 404</string>
+    <string name="player_not_found">Player with such nickname not found on liquipedia.net</string>
 </resources>

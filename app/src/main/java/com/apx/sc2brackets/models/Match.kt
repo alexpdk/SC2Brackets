@@ -1,14 +1,24 @@
-package com.apx.sc2brackets.brackets
+package com.apx.sc2brackets.models
 
-import com.apx.sc2brackets.maps.MatchMap
 import org.joda.time.*
 import org.joda.time.format.DateTimeFormat
 import java.util.*
+import com.apx.sc2brackets.models.Player.Race.*
+import org.jetbrains.annotations.TestOnly
 
-data class Match(val firstPlayer: String, val secondPlayer: String, val category: String) : MatchBracket.BracketItem {
-    var races = Pair(Race.PROTOSS, Race.ZERG)
+data class Match(val firstPlayer: Player, val secondPlayer: Player, val category: String) : MatchBracket.BracketItem {
+
+    @TestOnly
+    /*created and used only for testing purposes*/
+    constructor(firstPlayer: String, secondPlayer: String, category: String): this(
+        Player(firstPlayer, TBD), Player(secondPlayer, TBD), category
+    )
+    @TestOnly
+    /*created and used only for testing purposes*/
+    constructor(firstPlayer: String, firstRace: Player.Race, secondPlayer: String, secondRace: Player.Race, category: String): this(
+        Player(firstPlayer, firstRace), Player(secondPlayer, secondRace), category
+    )
     var score = Pair(0, 0)
-    var type = Type.BO7
 
     // Null time means match is to be scheduled in the future
     var startTime: DateTime? = null
@@ -40,46 +50,31 @@ data class Match(val firstPlayer: String, val secondPlayer: String, val category
                 else -> "In ${ss}s"
             }
         }
+    var maps = MatchMap.DEFAULT_MAPS
 
-    fun getMaps() = MatchMap.DEFAULT_MAPS
-
-    val startTimeString get() = startTime?.let { timeFormatter.print(it) } ?: "Match is not scheduled"
-
-    /* fun setScore(first: Int = 0, second: Int = 0): Match{
-         if(first > 0 && second > 0){
-             score.copy(first, second)
-         }else if(first > 0){
-             score.copy(first)
-         }else if(second > 0){
-             score.copy(second)
-         }else{
-
-         }
-     }
- */
-    enum class Type {
-        BO1, BO3, BO5, BO7, BO9
-    }
-
-    enum class Race {
-        PROTOSS, ZERG
+    val startTimeString get() = startTime?.let { timeFormatter.print(it) } ?: if(score == Pair(0, 0)){
+        "Match is not scheduled"
+    }else{
+        "TIme is unknown"
     }
 
     companion object {
-        private val PLAYERS =
-            listOf("Maru", "Serral", "Special", "PtitDrogo", "Trap", "KingCobra", "Kelazhur", "Scarlett", "Neeb")
-
-        val DEFAULT_LIST = Array(15) { i ->
-            random().apply {
-                score = score.copy(first = i)
-            }
-        }.toList()
+        private val PLAYERS = listOf(
+            Player("Maru", TERRAN),
+            Player("Serral", ZERG),
+            Player("SpeCial", TERRAN),
+            Player("Trap", PROTOSS),
+            Player("PtitDrogo", TERRAN),
+            Player("KingCobra", PROTOSS),
+            Player("Kelazhur", TERRAN),
+            Player("Scarlett", ZERG),
+            Player("Neeb", PROTOSS))
 
         fun random(category: String = "Custom games"): Match {
             val pair = PLAYERS.shuffled().take(2)
             return Match(pair[0], pair[1], category)
         }
 
-        val timeFormatter = DateTimeFormat.forPattern("MMMM,d YYYY - HH:mm z").withLocale(Locale.ENGLISH)!!
+        val timeFormatter = DateTimeFormat.forPattern("MMMM d, YYYY - HH:mm z").withLocale(Locale.ENGLISH)!!
     }
 }
