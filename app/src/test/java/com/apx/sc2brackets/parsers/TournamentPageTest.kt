@@ -54,6 +54,12 @@ class TournamentPageTest {
                 ""
             )
         }
+        val STK_3 by lazy{
+            TournamentPage.parseFile(
+                File(this.javaClass.getResource("/STK_3_Ziggy_Indy.html")!!.toURI()),
+                ""
+            )
+        }
     }
 
     @Test
@@ -168,7 +174,7 @@ class TournamentPageTest {
 
     @Test
     fun `Test IEM_Katowice bracket parsing`() {
-        val matches = matches.IEM_Katowice.getFullBracket()
+        val matches = matches.IEM_Katowice.getMatchList()
         assertThat(
             matches, equalTo(
                 listOf(
@@ -190,7 +196,7 @@ class TournamentPageTest {
 
     @Test
     fun `Test WCS Spring Qualifiers bracket parsing`() {
-        val matches = matches.WCS_Spring_Qualifiers.getFullBracket()
+        val matches = matches.WCS_Spring_Qualifiers.getMatchList()
         assertThat(
             matches, equalTo(
                 listOf(
@@ -201,6 +207,22 @@ class TournamentPageTest {
                     Match("TBD", TBD, "TBD", TBD, "Semifinals (Bo5)"),
                     Match("TBD", TBD, "TBD", TBD, "Semifinals (Bo5)"),
                     Match("TBD", TBD, "TBD", TBD, "Finals (Bo7)")
+                )
+            )
+        )
+    }
+
+    @Test
+    fun `Test STK_3 bracket parsing`(){
+        val maps = matches.STK_3.getMatchMaps(matches.STK_3.document)
+        assertThat(
+            maps, equalTo(
+                listOf(
+                    MatchMap("Abyssal Reef", winner = SECOND),
+                    MatchMap("Ascension to Aiur", winner = FIRST),
+                    MatchMap("Mech Depot", winner = SECOND),
+                    MatchMap("Odyssey", winner = SECOND),
+                    MatchMap("Catallena", winner = NONE)
                 )
             )
         )

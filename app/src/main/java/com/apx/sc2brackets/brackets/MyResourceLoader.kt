@@ -4,7 +4,7 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
 import com.apx.sc2brackets.R
-import com.apx.sc2brackets.models.Player
+import com.apx.sc2brackets.models.Player.Race
 import com.apx.sc2brackets.models.Player.Race.*
 
 class MyResourceLoader(val context: Context) {
@@ -25,28 +25,28 @@ class MyResourceLoader(val context: Context) {
 
     fun getBlankLogo() = _blank
 
-    fun getRaceBackgroundColor(race: Player.Race) = when (race) {
+    fun getRaceBackgroundColor(race: Race) = when (race) {
         PROTOSS -> ContextCompat.getColor(context, R.color.protossBackground)
         ZERG -> ContextCompat.getColor(context, R.color.zergBackground)
         TERRAN -> ContextCompat.getColor(context, R.color.terranBackground)
         TBD -> ContextCompat.getColor(context, R.color.neutralBackground)
     }
 
-    fun getRaceColor(race: Player.Race) = when (race) {
+    fun getRaceColor(race: Race) = when (race) {
         PROTOSS -> ContextCompat.getColor(context, R.color.protossColor)
         ZERG -> ContextCompat.getColor(context, R.color.zergColor)
         TERRAN -> ContextCompat.getColor(context, R.color.terranColor)
         TBD -> ContextCompat.getColor(context, R.color.colorAccent)
     }
 
-    fun getRaceLogo(race: Player.Race) = when (race) {
+    fun getRaceLogo(race: Race) = when (race) {
         PROTOSS -> protossLogo
         ZERG -> zergLogo
         TERRAN -> terranLogo
         TBD -> _blank
     }
 
-    fun getRaceWinLogo(race: Player.Race) = when (race) {
+    fun getRaceWinLogo(race: Race) = when (race) {
         PROTOSS -> protossWin
         ZERG -> zergWin
         TERRAN -> terranWin

@@ -21,8 +21,8 @@ class MatchBracket(list: List<Match>, val isLoading: Boolean = false) {
             when{
                 isLoading -> LOADING_MATCHES_TEXT
                 list.isEmpty() -> NO_MATCHES_TEXT
-                list.last() == matches.last() -> LAST_FOOTER_TEXT
-                else -> FOOTER_TEXT
+                list.last() == matches.last() -> BRACKET_END_TEXT
+                else -> PAGE_FOOTER_TEXT
             }
         )
         return list.toMutableList().apply {
@@ -58,19 +58,20 @@ class MatchBracket(list: List<Match>, val isLoading: Boolean = false) {
     }
 
     private fun getNextList(): List<BracketItem> {
-        val nextDay = DateTime.now().plusDays(1)
-        val list = matches.dropWhile { it.isBefore(nextDay) }
+        val dayEnd = DateTime.now().withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59)
+        val list = matches.dropWhile { it.isBefore(dayEnd) }
         return addFooter(addHeaders(list))
     }
     private fun getPastList(): List<BracketItem> {
-        val now = DateTime.now()
-        val list = matches.takeWhile { it.isBefore(now) }
+        val dayStart = DateTime.now().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0)
+        val list = matches.takeWhile { it.isBefore(dayStart) }
         return addFooter(addHeaders(list))
     }
     private fun getTodayList(): List<BracketItem> {
         val now = DateTime.now()
-        val nextDay = DateTime.now().plusDays(1)
-        val list = matches.dropWhile { it.isBefore(now) }.takeWhile { it.isBefore(nextDay) }
+        val dayStart = now.withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0)
+        val dayEnd = now.withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59)
+        val list = matches.dropWhile { it.isBefore(dayStart) }.takeWhile { it.isBefore(dayEnd) }
         return addFooter(addHeaders(list))
     }
 
@@ -80,7 +81,7 @@ class MatchBracket(list: List<Match>, val isLoading: Boolean = false) {
 
     fun remove(match: Match) {
         matches.remove(match)
-        listWithHeaders = addHeaders(matches)
+        listWithHeaders = addFooter(addHeaders(matches))
         nextList = getNextList()
         pastList = getPastList()
         todayList = getTodayList()
@@ -106,20 +107,16 @@ class MatchBracket(list: List<Match>, val isLoading: Boolean = false) {
     }
 
     companion object {
-        /**Bracket that contains "Round of 2", "Round of 4", "Round of 8" and "Round of 12" matches*/
-        val DEFAULT_TOURNAMENT = MatchBracket(
-            listOf(12, 8, 4, 2).map { i ->
-                Array(i / 2) { Match.random("Round of $i") }.toList()
-            }.flatten().apply {
-                for (i in 0..3) this[i].startTime = DateTime().minusHours(1)
-                for (i in 4..8) this[i].startTime = DateTime().plusHours(1)
-                for (i in 9 until size) this[i].startTime = DateTime().plusDays(1).plusHours(1)
-            }
-        )
-        const val FOOTER_TEXT = "Swipe to see more matches"
-        const val LAST_FOOTER_TEXT = "End of the tournament"
+        const val PAGE_FOOTER_TEXT = "Swipe to see more matches"
+        const val BRACKET_END_TEXT = "End of the tournament"
         const val NO_MATCHES_TEXT = "No matches in this category"
         const val LOADING_MATCHES_TEXT = "Loading match data..."
+
+        /**Special list to substitute bracket while the real data is downloaded.
+         * Provides bracket list with [LOADING_MATCHES_TEXT] headers.*/
         val LOADING_BRACKET_STUB = MatchBracket(emptyList(), isLoading = true)
+        /**Empty bracket when load is complete indicates that error happened and data
+         * cannot be obtained.*/
+        val ERROR_BRACKET_STUB = MatchBracket(emptyList())
     }
 }

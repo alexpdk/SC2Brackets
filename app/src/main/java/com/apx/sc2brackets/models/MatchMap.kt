@@ -25,7 +25,6 @@ data class MatchMap(
                 name = "Port Aleksander",
                 winner = Result.FIRST
             )
-//            MatchMap(name = "Kairos Junction", winner = Result.SECOND)
         )
     }
 }

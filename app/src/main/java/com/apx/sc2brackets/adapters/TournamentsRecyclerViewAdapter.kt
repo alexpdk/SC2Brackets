@@ -7,40 +7,44 @@ import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Observer
 import com.apx.sc2brackets.activities.MainActivity
 import com.apx.sc2brackets.R
-import com.apx.sc2brackets.SC2BracketsApplication
+import com.apx.sc2brackets.utils.countDown
 import com.apx.sc2brackets.models.Tournament
+import com.apx.sc2brackets.utils.timeDifference
+import com.apx.sc2brackets.view_models.TournamentViewModel
+import kotlinx.android.synthetic.main.tournament_info.view.*
 import kotlinx.android.synthetic.main.tournament_item.view.*
 import kotlinx.android.synthetic.main.tournaments_header.view.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import org.joda.time.DateTime
 import java.lang.RuntimeException
 
 private val TAG = "TournamentsRecyclerViewAdapter".substring(0..22)
 
-class TournamentsRecyclerViewAdapter(private val applicationContext: Context) :
+class TournamentsRecyclerViewAdapter(
+    private val activityContext: Context,
+    private val tournamentViewModel: TournamentViewModel
+) :
     androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>() {
 
-    private val dao = (applicationContext as SC2BracketsApplication).tournamentDatabase.tournamentDao()
+    //TODO: remove navigator, call activity directly
     var navigator: TournamentNavigator? = null
-    private var tournaments = emptyList<Tournament>().toMutableList()
+
     //TODO: use MyResourceLoader, move it to application
-    private val buttonIcon = ContextCompat.getDrawable(applicationContext, R.drawable.ic_right_arrow)!!
+    private val buttonIcon = ContextCompat.getDrawable(activityContext, R.drawable.ic_right_arrow)!!
 
     override fun onBindViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, position: Int) {
+        Log.i(TAG, "onBindViewHolder position = $position")
         if (position > 0) {
-            val tournament = tournaments[position - 1]
+            val tournament = tournamentViewModel.tournaments[position - 1]
+            val tagChanged = holder.itemView.tag != tournament
             holder.itemView.tag = tournament
-            (holder as? TournamentViewHolder)?.apply { display(tournament, buttonIcon) }
-
-            holder.itemView.go_to_tournament.setOnClickListener(onItemButtonClick)
+            (holder as? TournamentViewHolder)?.apply { onBind(tournament, tagChanged = tagChanged) }
         } else {
             (holder as? HeaderViewHolder)?.apply { display() }
             holder.itemView.find_tournament.setOnClickListener(onHeaderButtonClick)
@@ -51,15 +55,11 @@ class TournamentsRecyclerViewAdapter(private val applicationContext: Context) :
         parent: ViewGroup,
         viewType: Int
     ): androidx.recyclerview.widget.RecyclerView.ViewHolder {
-        val view = LayoutInflater.from(applicationContext).inflate(viewType, parent, false)
-        Log.i(TAG, "ViewHolder created")
+        val view = LayoutInflater.from(activityContext).inflate(viewType, parent, false)
         return when (viewType) {
-            R.layout.tournament_item -> TournamentViewHolder(
-                view
-            )
-            R.layout.tournaments_header -> HeaderViewHolder(
-                view
-            )
+            R.layout.tournament_item -> TournamentViewHolder(view)
+                .apply { onCreate(buttonIcon) }
+            R.layout.tournaments_header -> HeaderViewHolder(view)
             else -> throw RuntimeException("Unknown viewType, not a layout id")
         }
     }
@@ -81,28 +81,19 @@ class TournamentsRecyclerViewAdapter(private val applicationContext: Context) :
         }
     }
 
-    override fun getItemCount() = tournaments.size + 1
+    override fun getItemCount() = tournamentViewModel.tournaments.size + 1
 
     override fun getItemViewType(position: Int) = when (position) {
         0 -> R.layout.tournaments_header
         else -> R.layout.tournament_item
     }
 
-    fun remove(position: Int) {
-        if (position > 0) {
-            //0 position is for list header
-            val tournamentIndex = position - 1
-            val removedTournament = tournaments.removeAt(tournamentIndex)
-            notifyItemRemoved(position)
-            GlobalScope.launch(Dispatchers.IO) {
-                dao.delete(removedTournament)
-            }
-        }
+    fun remove(tournament: Tournament) {
+        tournamentViewModel.removeItem(tournament)
     }
 
-    fun setData(tournaments: List<Tournament>) {
-        this.tournaments = tournaments.toMutableList()
-        notifyDataSetChanged()
+    fun update(tournament: Tournament) {
+        (activityContext as MainActivity).updateTournament(tournament)
     }
 
     class HeaderViewHolder(view: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(view) {
@@ -118,11 +109,60 @@ class TournamentsRecyclerViewAdapter(private val applicationContext: Context) :
         }
     }
 
-    class TournamentViewHolder(view: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(view) {
-        fun display(tournament: Tournament, buttonIcon: Drawable) {
-            itemView.tournament_name.text = tournament.name
-            itemView.go_to_tournament.setImageDrawable(buttonIcon)
+    inner class TournamentViewHolder(view: View) :
+        androidx.recyclerview.widget.RecyclerView.ViewHolder(view) {
+
+        private var tournamentInfo: View? = null
+
+        fun onCreate(buttonIcon: Drawable) {
+            with(itemView.second_player_button) {
+                setImageDrawable(buttonIcon)
+                setOnClickListener(onItemButtonClick)
+            }
+            itemView.setOnClickListener { tournamentViewModel.toggleExpand(adapterPosition - 1) }
         }
+
+        fun onBind(tournament: Tournament, tagChanged: Boolean) {
+            itemView.tournament_name.text = tournament.name
+            if (tournamentViewModel.itemExpanded[adapterPosition - 1]) {
+                expandInfo()
+            } else {
+                collapseInfo()
+            }
+            if(tagChanged) tournamentInfo?.run{
+                bracket_button.setOnClickListener { navigator?.goToTournament(itemView.tag as Tournament) }
+                update_button.setOnClickListener { update(itemView.tag as Tournament) }
+            }
+        }
+
+        private fun expandInfo() {
+            if (tournamentInfo == null) {
+                tournamentInfo = LayoutInflater.from(activityContext)
+                    .inflate(R.layout.tournament_info, itemView.tournament_info_frame, false)
+                itemView.tournament_info_frame.addView(tournamentInfo)
+
+                tournamentInfo?.notifications_switch?.thumbTintList =
+                    ContextCompat.getColorStateList(activityContext, R.color.switch_color)
+            }
+            itemView.tournament_info_frame.visibility = VISIBLE
+            tournamentInfo?.run{
+                // Set last update time
+                last_update_time.text = tournament.entity.lastUpdate.let {
+                    "${timeDifference(DateTime.now(), it)} ago"
+                }
+                //Set next match text
+                next_game.text = tournament.nextMatch()?.let {
+                    countDown(it.startTime)
+                        .plus("\n${it.firstPlayer.name} vs ${it.secondPlayer.name}")
+                } ?: "No next match"
+            }
+        }
+
+        private fun collapseInfo() {
+            itemView.tournament_info_frame.visibility = GONE
+        }
+
+        val tournament get() = itemView.tag as Tournament
     }
 
     class TextChangeWatcher(private val onChange: () -> Unit) : TextWatcher {

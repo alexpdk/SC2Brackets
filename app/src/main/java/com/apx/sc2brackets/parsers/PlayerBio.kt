@@ -21,7 +21,7 @@ class PlayerBio private constructor(override val document: Document) : ParsedDoc
     val fullIntro: List<String> by lazy {
         val infoboxIndex = infobox.elementSiblingIndex()
         val introParagraphs = Elements(infobox.siblingElements()
-            //get all paragraphs after infobox and before table of contents - fullIntro
+            //getTournament all paragraphs after infobox and before table of contents - fullIntro
             .drop(infoboxIndex)
             .takeWhile {
                 it.tagName() == "p"

@@ -3,6 +3,7 @@ package com.apx.sc2brackets.parsers
 import com.apx.sc2brackets.models.Match
 import com.apx.sc2brackets.models.MatchMap
 import com.apx.sc2brackets.models.Player
+import com.apx.sc2brackets.models.Player.Race
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import org.joda.time.format.DateTimeFormat
@@ -12,15 +13,6 @@ import java.lang.IllegalArgumentException
 import java.util.*
 
 class TournamentPage private constructor(override val document: Document) : ParsedDocument {
-
-    fun getFullBracket(): List<Match> {
-        val bracket = document.selectNotEmpty(Selectors.bracketBlock)[0]
-        return bracket.select(Selectors.bracketColumn).flatMap<Element, Match> {
-            val category = it.selectNotEmpty(Selectors.bracketHeader).text()
-            it.select(Selectors.matchBlock)
-                .map { matchBlock -> getMatch(matchBlock, category) }
-        }
-    }
 
     private fun getMapResult(mapBlock: Element): MatchMap.Result {
         val iconBlock = mapBlock.select("div img")
@@ -47,7 +39,7 @@ class TournamentPage private constructor(override val document: Document) : Pars
         )
             .eachAttr("title")
             .map { pickRace(it) }
-            .ifEmpty { listOf(Player.Race.TBD, Player.Race.TBD) }
+            .ifEmpty { listOf(Race.TBD, Race.TBD) }
 
         val match = Match(
             firstPlayer = Player(names[0], races[0]),
@@ -57,9 +49,19 @@ class TournamentPage private constructor(override val document: Document) : Pars
         match.score = Pair(matchPoints[0], matchPoints[1])
         matchBlock.selectFirst(Selectors.matchPopup)?.let {
             match.startTime = getMatchTime(it)
+            match.isFinished = isFinished(it)
         }
         match.maps = getMatchMaps(matchBlock)
         return match
+    }
+
+    fun getMatchList(): List<Match> {
+        val bracket = document.selectNotEmpty(Selectors.bracketBlock)[0]
+        return bracket.select(Selectors.bracketColumn).flatMap<Element, Match> {
+            val category = it.selectNotEmpty(Selectors.bracketHeader).text()
+            it.select(Selectors.matchBlock)
+                .map { matchBlock -> getMatch(matchBlock, category) }
+        }
     }
 
     fun getMatchMaps(matchBlock: Element): List<MatchMap> {
@@ -67,7 +69,8 @@ class TournamentPage private constructor(override val document: Document) : Pars
         val playedMaps = matchBlock.select(Selectors.matchMaps) - bannedMaps
         return playedMaps.map {
             MatchMap(
-                name = it.selectNotEmpty(Selectors.matchMapName).text(),
+
+                name = it.select(Selectors.matchMapName).ifEmpty { it.select("a") }.text(),
                 winner = getMapResult(mapBlock = it)
             )
         } + bannedMaps.map {
@@ -99,9 +102,14 @@ class TournamentPage private constructor(override val document: Document) : Pars
 
     fun getName() = document.selectNotEmpty(Selectors.tournamentName).text()
 
+    private fun isFinished(popupBlock: Element): Boolean{
+        val timeBlock = popupBlock.selectFirst(Selectors.matchTime) ?: return true
+        return timeBlock.attr("data-finished").isNotEmpty()
+    }
+
     @Throws(IllegalArgumentException::class)
-    fun pickRace(raceName: String): Player.Race {
-        return Player.Race.valueOf(raceName.toUpperCase().trim())
+    fun pickRace(raceName: String): Race {
+        return Race.valueOf(raceName.toUpperCase().trim())
     }
 
     companion object : Parser<TournamentPage>() {

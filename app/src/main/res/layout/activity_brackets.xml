@@ -23,7 +23,9 @@
 
     <include
             layout="@layout/content_main"
-            android:id="@+id/include"/>
+            android:id="@+id/include"
+            app:layout_anchorGravity="bottom|center"
+            app:layout_anchor="@+id/fab"/>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab"
@@ -31,10 +33,11 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
             android:layout_margin="@dimen/fab_margin"
-            app:srcCompat="@drawable/ic_person_disabled"
+            app:srcCompat="@drawable/ic_sync_light"
             android:scaleType="center"
             app:fabSize="normal"
-            app:maxImageSize="30dp"/>
+            app:maxImageSize="30dp"
+            app:backgroundTint="@color/colorAccent"/>
 
     <ProgressBar
             style="@style/Widget.AppCompat.ProgressBar"

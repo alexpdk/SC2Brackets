@@ -1,14 +1,17 @@
 package com.apx.sc2brackets.brackets
 
-import androidx.recyclerview.widget.RecyclerView
+import android.service.autofill.FieldClassification
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import com.apx.sc2brackets.R
+import com.apx.sc2brackets.utils.countDown
 import com.apx.sc2brackets.models.Match
+import com.apx.sc2brackets.utils.stringify
 
 import kotlinx.android.synthetic.main.match_details.view.*
 import kotlinx.android.synthetic.main.match_item.view.*
+import java.lang.StringBuilder
 
 private const val TAG = "MatchViewHolder"
 
@@ -26,9 +29,9 @@ class MatchViewHolder(val view: View) : androidx.recyclerview.widget.RecyclerVie
     private val onRaceButtonClick = { button: View ->
         Log.i(TAG, "RaceButton clicked")
         val match = view.tag as Match
-        val player = if(button==view.first_player_button){
+        val player = if (button == view.first_player_button) {
             match.firstPlayer
-        }else{
+        } else {
             match.secondPlayer
         }
         bracketAdapter?.interactionListener?.onPlayerSelect(player)
@@ -56,7 +59,7 @@ class MatchViewHolder(val view: View) : androidx.recyclerview.widget.RecyclerVie
     init {
         view.setOnClickListener(onViewClick)
         view.first_player_button.setOnClickListener(onRaceButtonClick)
-        view.go_to_tournament.setOnClickListener(onRaceButtonClick)
+        view.second_player_button.setOnClickListener(onRaceButtonClick)
     }
 
     fun clearAdapter() {
@@ -73,13 +76,9 @@ class MatchViewHolder(val view: View) : androidx.recyclerview.widget.RecyclerVie
         view.first_player_button.setImageDrawable(
             bracketAdapter?.loader?.getRaceLogo(match.firstPlayer.race)
         )
-        view.go_to_tournament.setImageDrawable(
+        view.second_player_button.setImageDrawable(
             bracketAdapter?.loader?.getRaceLogo(match.secondPlayer.race)
         )
-//        view.time_button?.apply {
-//            text = match.countDown
-//            paintFlags = paintFlags or Paint.UNDERLINE_TEXT_FLAG
-//        }
         view.match_details_frame?.visibility = if (match.detailsExpanded) {
             View.VISIBLE
         } else {
@@ -87,6 +86,7 @@ class MatchViewHolder(val view: View) : androidx.recyclerview.widget.RecyclerVie
         }
     }
 
+    //TODO: investigate case if viewHolder assigned to another Match
     private fun inflateDetails(detailsLayout: ViewGroup) {
         if (detailsLayout.match_details_content == null) {
 
@@ -95,12 +95,11 @@ class MatchViewHolder(val view: View) : androidx.recyclerview.widget.RecyclerVie
                 val linearLayout = it.inflate(R.layout.match_details, detailsLayout, false)
                         as ViewGroup
                 val match = view.tag as Match
-                linearLayout.match_date_time.text = match.startTimeString
-                linearLayout.time_button2.text = match.countDown
+                linearLayout.match_date_time.text = printMatchTime(match)
 
                 val mapList = linearLayout.map_result_table
                 for (map in match.maps) {
-                    //attachToRoot = false is used to get rendered mapView instead of its parent as returned value
+                    //attachToRoot = false is used to getTournament rendered mapView instead of its parent as returned value
                     val mapViewHolder = MapViewHolder(
                         it.inflate(R.layout.map_result, mapList, false), bracketAdapter!!
                     )
@@ -110,6 +109,18 @@ class MatchViewHolder(val view: View) : androidx.recyclerview.widget.RecyclerVie
                 detailsLayout.addView(linearLayout)
             }
         }
+    }
+
+    private fun printMatchTime(match: Match): String{
+        val s = StringBuilder()
+        s.append(stringify(match.startTime))
+        s.append('\n')
+        if(match.isFinished){
+            s.append(countDown(match.startTime))
+        }else{
+            s.append("Live (started ${countDown(match.startTime)})")
+        }
+        return s.toString()
     }
 
     /**Establish reference to [IBracketAdapter] required to perform context-dependent actions.

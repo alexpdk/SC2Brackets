@@ -16,7 +16,8 @@ class MatchBracketTest {
                 MatchBracket.Header("Round1"),
                 Match("Player1", "Player2", "Round1"),
                 MatchBracket.Header("Round2"),
-                Match("Player1", "Player2", "Round2")
+                Match("Player1", "Player2", "Round2"),
+                MatchBracket.Header(MatchBracket.BRACKET_END_TEXT)
             )
         ),
         "complex" to Case(
@@ -35,7 +36,8 @@ class MatchBracketTest {
                 MatchBracket.Header("3rd place match"),
                 Match("Player1", "Player3", "3rd place match"),
                 MatchBracket.Header("Final"),
-                Match("Player2", "Player4", "Final")
+                Match("Player2", "Player4", "Final"),
+                MatchBracket.Header(MatchBracket.BRACKET_END_TEXT)
             )
         )
     )
@@ -68,6 +70,9 @@ class MatchBracketTest {
             "Final" to listOf(
                 MatchBracket.Header("Final"),
                 Match("Player2", "Player4", "Final")
+            ),
+            "Footer" to listOf(
+                MatchBracket.Header(MatchBracket.BRACKET_END_TEXT)
             )
         )
         assertThat(bracket.list, equalTo(groups.values.flatten()))

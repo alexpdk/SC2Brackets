@@ -1,5 +1,4 @@
 <resources>
-
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         <!-- Customize your theme here. -->
@@ -18,14 +17,36 @@
         <item name="android:textSize">18sp</item>
         <item name="android:textColor">@color/colorAccent</item>
     </style>
+    <style name="Header">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">@color/colorAccent</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:gravity">center</item>
+    </style>
     <style name="Subheader">
         <item name="android:textSize">16sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">@color/colorPrimaryDark</item>
     </style>
+    <style name="Label">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/colorPrimaryDark</item>
+    </style>
     <style name="BorderlessButton" parent="Widget.AppCompat.Button.Borderless">
-        <item name="android:colorButtonNormal">@android:color/black</item>
-        <item name="android:colorAccent">@color/lightGrey</item>
+        <item name="colorButtonNormal">@android:color/black</item>
+        <item name="colorAccent">@color/lightGrey</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+    <style name="Comment">
+        <item name="android:textSize">17sp</item>
+        <item name="android:textColor">@color/design_default_color_primary_dark</item>
+        <item name="android:textStyle">italic</item>
+        <item name="android:background">#ccffffff</item>
+        <item name="android:padding">4dp</item>
+    </style>
+    <style name="Switch" parent="Widget.AppCompat.CompoundButton.Switch">
+        <item name="thumbTint">@color/switch_color</item>
     </style>
 
 </resources>

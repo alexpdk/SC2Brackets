@@ -49,7 +49,7 @@
             android:textSize="28sp"
             app:layout_constraintBaseline_toBaselineOf="@+id/first_player_name"
             android:layout_marginEnd="8dp"
-            app:layout_constraintEnd_toStartOf="@+id/go_to_tournament"
+            app:layout_constraintEnd_toStartOf="@+id/second_player_button"
             android:layout_marginRight="8dp"
             app:layout_constraintStart_toEndOf="@+id/first_player_button"
             android:layout_marginStart="8dp"
@@ -66,12 +66,12 @@
             android:layout_marginBottom="8dp"
             app:layout_constraintBottom_toTopOf="@id/match_details_frame"
             android:layout_marginEnd="8dp"
-            app:layout_constraintEnd_toStartOf="@+id/go_to_tournament"
+            app:layout_constraintEnd_toStartOf="@+id/second_player_button"
             android:layout_marginRight="8dp"
             android:textSize="18sp"/>
 
     <ImageButton
-            android:id="@+id/go_to_tournament"
+            android:id="@+id/second_player_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:srcCompat="@drawable/ic_zerg"

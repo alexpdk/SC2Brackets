@@ -10,8 +10,9 @@
     <color name="neutralBackground">#f5f5f5</color>
 
     <color name="lightGrey">#929292</color>
+    <color name="liveGreen">#2e7d32</color>
 
     <color name="terranColor">#1516ff</color>
-    <color name="zergColor">#ff2400</color>
+    <color name="zergColor">#FF2400</color>
     <color name="protossColor">#8B7920</color>
 </resources>

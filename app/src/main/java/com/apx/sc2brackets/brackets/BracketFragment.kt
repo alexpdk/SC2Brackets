@@ -13,7 +13,7 @@ import com.apx.sc2brackets.R
 import com.apx.sc2brackets.adapters.BracketRecyclerViewAdapter
 import com.apx.sc2brackets.models.MatchBracket
 import com.apx.sc2brackets.models.Player
-import com.apx.sc2brackets.view_models.TournamentViewModel
+import com.apx.sc2brackets.view_models.BracketViewModel
 
 private const val TAG = "BracketFragment"
 
@@ -61,8 +61,8 @@ class BracketFragment : Fragment() {
                 (itemAnimator as androidx.recyclerview.widget.SimpleItemAnimator).supportsChangeAnimations = false
                 setRecycledViewPool(sharedRecycledViewPool)
             }
-            //TournamentViewModel is properly initialized in BracketActivity and just passed here
-            val tournamentViewModel = ViewModelProviders.of(activity!!).get(TournamentViewModel::class.java)
+            //BracketViewModel is properly initialized in BracketActivity and just passed here
+            val tournamentViewModel = ViewModelProviders.of(activity!!).get(BracketViewModel::class.java)
             tournamentViewModel.bracket.observe(this, Observer {
                 Log.i(TAG, "MatchBracket updated, new value = $it")
                 bracketAdapter.setBracket(it)
