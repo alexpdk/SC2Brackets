@@ -10,7 +10,7 @@
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"
         app:layoutManager="LinearLayoutManager"
-        tools:context=".brackets.BracketFragment"
+        tools:context=".components.BracketFragment"
         tools:listitem="@layout/match_item"/>
         <!--tools:listItem tells AndroidStudio what to show in preview-->
         <!--Actual binding is performed in BracketRecyclerViewAdapter by onCreateViewHolder-->

@@ -1,7 +1,8 @@
-package com.apx.sc2brackets
+package com.apx.sc2brackets.components
 
 import android.app.Activity
 import androidx.appcompat.app.AlertDialog
+import com.apx.sc2brackets.R
 
 class FinishAlert(private val activity: Activity, private val msg: String) {
     fun show() {

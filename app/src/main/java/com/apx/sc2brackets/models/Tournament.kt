@@ -2,6 +2,7 @@ package com.apx.sc2brackets.models
 
 import androidx.room.*
 import com.apx.sc2brackets.db.DateTimeTypeConverter
+import com.apx.sc2brackets.utils.dayEnd
 import org.joda.time.DateTime
 
 @Entity(indices = [Index(value = ["url"], unique = true)], tableName = "tournament")
@@ -26,13 +27,15 @@ class Tournament(name: String? = null, url: String = "", lastUpdate: DateTime = 
     @Embedded
     var entity = TournamentEntity(name, url, lastUpdate)
 
-    @Relation(entity = Match::class, parentColumn = "id", entityColumn = "tournament_id")
+    @Relation(entity = MatchEntity::class, parentColumn = "id", entityColumn = "tournament_id")
             /**List of played matches sorted by start order.*/
     var matches: List<Match> = emptyList()
 
     var lastUpdate: DateTime
         get() = entity.lastUpdate
-        set(value) {entity.lastUpdate = value}
+        set(value) {
+            entity.lastUpdate = value
+        }
 
     val name get() = entity.name
     val url get() = entity.url
@@ -45,11 +48,11 @@ class Tournament(name: String? = null, url: String = "", lastUpdate: DateTime = 
         }
 
     /**Returns match that is played right now in the tournament or null if no match is alive*/
-    fun liveMatch(): Match? = matches.firstOrNull { it.isBefore(DateTime.now()) && !it.isFinished }
+    fun liveMatch(): Match? = matches.firstOrNull { it.isLive }
 
     /**Returns next match that will be played in tournament, if it is not over, else null.
      * If last match of the tournament is currently live, returns null.  */
-    fun nextMatch(): Match? = matches.firstOrNull{ !it.isBefore(DateTime.now()) }
+    fun nextMatch(): Match? = matches.firstOrNull { !it.isBefore(DateTime.now()) }
 
     /**See [TournamentEntity] documentation for design reason*/
     var primaryKey: Int
@@ -57,6 +60,26 @@ class Tournament(name: String? = null, url: String = "", lastUpdate: DateTime = 
         set(value) {
             entity.id = value
         }
+
+    val status: Status
+        get() {
+            val now = DateTime.now()
+            val next = nextMatch()
+            val startTime = next?.startTime
+            when {
+                matches.isEmpty() -> Status.NO_SCHEDULE
+                next == null -> Status.ENDED
+                startTime == null -> Status.NO_SCHEDULE
+                startTime.isAfter(now.plusDays(SOON_TIME_DAYS)) -> Status.HAS_SCHEDULE
+                startTime.isAfter(dayEnd(now)) -> Status.SOON
+                liveMatch() != null -> Status.LIVE
+                else-> Status.TODAY
+            }
+        }
+
+    enum class Status {
+        NO_SCHEDULE, HAS_SCHEDULE, SOON, TODAY, LIVE, ENDED_FOR_TODAY, ENDED
+    }
 
     companion object {
         val DEFAULT_KNOWN_LIST = listOf(
@@ -77,5 +100,6 @@ class Tournament(name: String? = null, url: String = "", lastUpdate: DateTime = 
                 url = "https://liquipedia.net/starcraft2/Red_Hot_Cup/1"
             )
         )
+        private const val SOON_TIME_DAYS = 3
     }
 }

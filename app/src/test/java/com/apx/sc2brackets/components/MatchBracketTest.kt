@@ -1,4 +1,4 @@
-package com.apx.sc2brackets.brackets
+package com.apx.sc2brackets.components
 
 import com.apx.sc2brackets.models.Match
 import com.apx.sc2brackets.models.MatchBracket

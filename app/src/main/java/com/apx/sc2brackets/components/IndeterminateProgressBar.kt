@@ -1,4 +1,4 @@
-package com.apx.sc2brackets
+package com.apx.sc2brackets.components
 
 import android.graphics.Color
 import android.widget.ProgressBar

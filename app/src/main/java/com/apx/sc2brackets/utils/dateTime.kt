@@ -3,6 +3,9 @@ package com.apx.sc2brackets.utils
 import com.apx.sc2brackets.db.DateTimeTypeConverter
 import org.joda.time.*
 
+fun dayStart(moment: DateTime) = moment.withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0)
+fun dayEnd(moment: DateTime) = moment.withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59)
+
 //TODO: use Period API properly
 //TODO: unite functions to Locale-dependent class
 fun timeDifference(moment1: DateTime, moment2: DateTime): String {

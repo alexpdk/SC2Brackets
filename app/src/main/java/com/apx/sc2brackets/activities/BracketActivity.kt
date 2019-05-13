@@ -2,10 +2,7 @@ package com.apx.sc2brackets.activities
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AppCompatActivity
-import android.view.Menu
-import android.view.MenuItem
 import com.apx.sc2brackets.R
 import com.apx.sc2brackets.models.Player
 
@@ -17,11 +14,11 @@ import android.view.View.VISIBLE
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
-import com.apx.sc2brackets.FinishAlert
-import com.apx.sc2brackets.IndeterminateProgressBar
+import com.apx.sc2brackets.components.FinishAlert
+import com.apx.sc2brackets.components.IndeterminateProgressBar
 import com.apx.sc2brackets.SC2BracketsApplication
 import com.apx.sc2brackets.adapters.BracketFragmentPagerAdapter
-import com.apx.sc2brackets.brackets.BracketFragment
+import com.apx.sc2brackets.MyResourceLoader
 import com.apx.sc2brackets.models.MatchBracket
 import com.apx.sc2brackets.view_models.BracketViewModel
 import kotlinx.coroutines.GlobalScope
@@ -29,22 +26,22 @@ import kotlinx.coroutines.launch
 
 private const val TAG = "BracketActivity"
 
-class BracketActivity : AppCompatActivity(), BracketFragment.OnMatchInteractionListener {
+class BracketActivity : AppCompatActivity() {
 
+    private lateinit var bracketViewModel: BracketViewModel
+
+    /**Class providing access to Drawable, Color and other resources*/
+    val resourceLoader = MyResourceLoader(this)
     /**Pool shared by all the BracketFragments.
      *
      * Without the pool the performance significantly drops due to repeated ViewHolder creation.
      * Shared view pool references activity context, so it should live inside activity to avoid memory leak*/
-    private val sharedRecycledViewPool = androidx.recyclerview.widget.RecyclerView.RecycledViewPool()
-
-    private var selectedPlayer: Player? = null
-    private var suggestSave = false
-    private lateinit var bracketViewModel: BracketViewModel
-
-    init {
+    val sharedRecycledViewPool = androidx.recyclerview.widget.RecyclerView.RecycledViewPool().apply {
         // allocate enough space to transfer match ViewHolders from one BracketFragment to another
-        sharedRecycledViewPool.setMaxRecycledViews(R.layout.match_item, 15)
+        setMaxRecycledViews(R.layout.match_item, 15)
     }
+    /**Suggest user to save tournament in database when returning to previous activity*/
+    private var suggestSave = false
 
     override fun onBackPressed() {
         if (suggestSave) {
@@ -74,21 +71,14 @@ class BracketActivity : AppCompatActivity(), BracketFragment.OnMatchInteractionL
         loadTournamentData()
 
         bracketViewPager.adapter =
-            BracketFragmentPagerAdapter(sharedRecycledViewPool, supportFragmentManager)
+            BracketFragmentPagerAdapter(supportFragmentManager)
         bracketTabLayout.setupWithViewPager(bracketViewPager)
 
         IndeterminateProgressBar(progressBar).setup()
         fab.setOnClickListener {
-            selectedPlayer?.let {
-                lookupPlayer(it)
-                selectedPlayer = null
-                fab.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_sync_light))
-            } ?: let {
-                progressBar.visibility = VISIBLE
-                bracketViewModel.updateTournament()
-            }
+            progressBar.visibility = VISIBLE
+            bracketViewModel.updateTournament()
         }
-        fab.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_sync_light))
 
         bracketViewModel.networkResponse.observe(this, Observer {
             it?.apply {
@@ -116,28 +106,6 @@ class BracketActivity : AppCompatActivity(), BracketFragment.OnMatchInteractionL
                 }
             }
         })
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        menuInflater.inflate(R.menu.menu_main, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        return when (item.itemId) {
-            R.id.action_settings -> true
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
-    override fun onPlayerSelect(player: Player) {
-        //TODO: handle deselection
-        selectedPlayer = player
-        fab.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_person))
     }
 
     override fun onSaveInstanceState(outState: Bundle?) {
@@ -191,13 +159,13 @@ class BracketActivity : AppCompatActivity(), BracketFragment.OnMatchInteractionL
         //avoid suggesting to save tournament if it is already known
         GlobalScope.launch {
             val urlUsed = async.await()
-            if(urlUsed){
+            if (urlUsed) {
                 suggestSave = false
             }
         }
     }
 
-    private fun lookupPlayer(player: Player) {
+    fun lookupPlayer(player: Player) {
         val intent = Intent(this, PlayerProfileActivity::class.java).apply {
             putExtra(PLAYER_NAME_INTENT_MESSAGE, player.name)
             putExtra(PLAYER_RACE_INTENT_MESSAGE, player.race)
@@ -212,7 +180,10 @@ class BracketActivity : AppCompatActivity(), BracketFragment.OnMatchInteractionL
     private fun showDataNotAvailableAlert() =
         FinishAlert(this, "Sorry, cannot extract useful data from this page").show()
 
-    private fun showPageNotFoundAlert() = FinishAlert(this, "Cannot load this web page from the site").show()
+    private fun showPageNotFoundAlert() = FinishAlert(
+        this,
+        "Cannot load this web page from the site"
+    ).show()
 
     companion object {
         const val PLAYER_NAME_INTENT_MESSAGE = "com.apx.sc2brackets.player_name"

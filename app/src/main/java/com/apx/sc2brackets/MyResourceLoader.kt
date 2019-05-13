@@ -1,4 +1,4 @@
-package com.apx.sc2brackets.brackets
+package com.apx.sc2brackets
 
 import android.content.Context
 import android.graphics.drawable.Drawable

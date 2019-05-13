@@ -13,5 +13,6 @@ data class Player(var name: String = "", var race: Race = Race.TBD) {
     }
     companion object {
         const val TO_BE_DEFINED = "TBD"
+        val TBD = Player(name = TO_BE_DEFINED)
     }
 }

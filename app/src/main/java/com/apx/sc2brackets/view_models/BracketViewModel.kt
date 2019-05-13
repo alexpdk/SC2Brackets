@@ -12,8 +12,6 @@ import com.apx.sc2brackets.network.TournamentDataLoader
 import kotlinx.coroutines.*
 import java.util.concurrent.CancellationException
 
-private const val TAG = "BracketViewModel"
-
 class BracketViewModel : ViewModel(), CoroutineScope by CoroutineScope(Dispatchers.IO) {
 
     private lateinit var dao: TournamentDao

@@ -10,6 +10,7 @@ import org.jetbrains.annotations.TestOnly
 
 // Same issue with `val` as in [Player]
 @Entity(
+    tableName = "Match",
     foreignKeys = [ForeignKey(
         entity = TournamentEntity::class,
         parentColumns = ["id"],
@@ -18,20 +19,17 @@ import org.jetbrains.annotations.TestOnly
     )],
     indices = [Index("tournament_id")]
 )
-data class Match(
+data class MatchEntity(
     @Embedded(prefix = "first_") var firstPlayer: Player,
     @Embedded(prefix = "second_") var secondPlayer: Player,
     var category: String
-) : MatchBracket.BracketItem {
-
-    @Ignore
-    var isFinished = true
+) {
 
     @ColumnInfo(name = "tournament_id")
     var tournamentID = 0
 
-    @PrimaryKey
-    var uuid = UUID.randomUUID().toString()
+    @PrimaryKey(autoGenerate = true)
+    var id = 0
 
     @TypeConverters(ScoreTypeConverter::class)
     var score = Pair(0, 0)
@@ -39,14 +37,58 @@ data class Match(
     // Null time means match is to be scheduled in the future
     @TypeConverters(DateTimeTypeConverter::class)
     var startTime: DateTime? = null
+}
 
-    /**Are match details expanded inside list. Temporary solution for implementing expand/collapse animation.
-     * Better to implement in ViewModel, like in TournamentsRecyclerViewAdapter*/
+class Match(firstPlayer: Player = Player.TBD, secondPlayer: Player = Player.TBD, category: String = "") :
+    MatchBracket.BracketItem {
+    @Embedded
+    var entity = MatchEntity(firstPlayer, secondPlayer, category)
+
+    @Relation(entity = MatchMap::class, parentColumn = "id", entityColumn = "match_id")
+            /**List of played matches sorted by start order.*/
+    var maps: List<MatchMap> = emptyList()
+
+    /**Are match details expanded inside list, solution for implementing expand/collapse animation.*/
     @Ignore
     var detailsExpanded = false
 
+    override fun equals(other: Any?): Boolean {
+        return entity == other
+    }
+
+    override fun hashCode(): Int {
+        return entity.hashCode()
+    }
+
     @Ignore
-    var maps = MatchMap.DEFAULT_MAPS
+    var isFinished = true
+
+    val firstPlayer get() = entity.firstPlayer
+    /**Does match have any meaningful score (other than 0:0)*/
+    private val hasScore get() = entity.score.first > 0 || entity.score.second > 0
+    // Match with unknown time and score considered to be in the past, without score - in the future
+    fun isBefore(moment: DateTime) = entity.startTime?.isBefore(moment) ?: hasScore
+    /**Is match played right now*/
+    val isLive get() = isBefore(DateTime.now()) && !isFinished
+
+    var score: Pair<Int, Int>
+        get() = entity.score
+        set(value) {
+            entity.score = value
+        }
+    val secondPlayer get() = entity.secondPlayer
+
+    var startTime: DateTime?
+        get() = entity.startTime
+        set(value) {
+            entity.startTime = value
+        }
+
+    var tournamentID: Int
+        get() = entity.tournamentID
+        set(value) {
+            entity.tournamentID = value
+        }
 
     /*created and used only for testing purposes*/
     @TestOnly
@@ -65,10 +107,6 @@ data class Match(
     ) : this(
         Player(firstPlayer, firstRace), Player(secondPlayer, secondRace), category
     )
-
-    val hasScore get() = score.first > 0 || score.second > 0
-    // Match with unknown time and score considered to be in the past, without score - in the future
-    fun isBefore(moment: DateTime) = startTime?.isBefore(moment) ?: hasScore
 
     companion object {
         private val PLAYERS = listOf(

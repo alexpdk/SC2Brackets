@@ -17,9 +17,9 @@ import android.view.View
 import android.view.View.*
 import android.widget.FrameLayout
 import android.widget.Toast
-import com.apx.sc2brackets.FinishAlert
+import com.apx.sc2brackets.components.FinishAlert
 import com.apx.sc2brackets.R
-import com.apx.sc2brackets.brackets.MyResourceLoader
+import com.apx.sc2brackets.MyResourceLoader
 import com.apx.sc2brackets.models.Player
 
 private const val TAG = "PlayerProfileActivity"
@@ -49,7 +49,10 @@ class PlayerProfileActivity : AppCompatActivity(), CoroutineScope by CoroutineSc
                 val (success, code, body) = fetchPage(playerName)
                 if (!success) {
                     Log.e(TAG, "Incorrect network response: $code $body")
-                    FinishAlert(this@PlayerProfileActivity, "Player data not available from site").show()
+                    FinishAlert(
+                        this@PlayerProfileActivity,
+                        "Player data not available from site"
+                    ).show()
                 }
                 else body?.let {
                     if (it.length > 1000000) {
@@ -99,7 +102,10 @@ class PlayerProfileActivity : AppCompatActivity(), CoroutineScope by CoroutineSc
             }
         } catch (e: Exception) {
             Log.e(TAG, "Exception during parsing: ${e.stackTrace}")
-            FinishAlert(this@PlayerProfileActivity, "Exception happened when parsing page").show()
+            FinishAlert(
+                this@PlayerProfileActivity,
+                "Exception happened when parsing page"
+            ).show()
         } finally {
             bio.freeMemory()
         }

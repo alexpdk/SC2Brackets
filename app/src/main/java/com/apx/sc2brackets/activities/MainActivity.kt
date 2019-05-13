@@ -13,7 +13,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
-import com.apx.sc2brackets.IndeterminateProgressBar
+import com.apx.sc2brackets.components.IndeterminateProgressBar
 import com.apx.sc2brackets.R
 import com.apx.sc2brackets.SC2BracketsApplication
 import com.apx.sc2brackets.adapters.TournamentNavigator

@@ -1,9 +1,7 @@
 package com.apx.sc2brackets.db
 
 import androidx.room.*
-import com.apx.sc2brackets.models.Match
-import com.apx.sc2brackets.models.Tournament
-import com.apx.sc2brackets.models.TournamentEntity
+import com.apx.sc2brackets.models.*
 
 @Dao
 interface TournamentDao {
@@ -12,8 +10,9 @@ interface TournamentDao {
     @Transaction
     fun getAllTournaments(): List<Tournament>
 
-    @Query("SELECT * FROM `Match` WHERE uuid = :uuid")
-    fun getMatch(uuid: String): Match?
+    @Query("SELECT * FROM `Match` WHERE id = :id")
+    @Transaction
+    fun getMatch(id: Int): Match?
 
     @Query("SELECT * FROM tournament WHERE url = :url")
     @Transaction
@@ -32,7 +31,21 @@ interface TournamentDao {
     }
 
     @Insert
-    fun insert(vararg matches: Match)
+    fun insert(vararg maps: MatchMap)
+
+    @Insert
+    fun insert(matchEntity: MatchEntity): Long
+
+    @Transaction
+    fun insert(vararg matches: Match){
+        matches.forEach {match->
+            val id = insert(match.entity)
+            if(id >= 0){
+                match.maps.forEach { it.matchID = id.toInt() }
+                insert(*match.maps.toTypedArray())
+            }
+        }
+    }
 
     @Insert
     fun insert(tournamentEntity: TournamentEntity): Long

@@ -1,5 +1,7 @@
 package com.apx.sc2brackets.models
 
+import com.apx.sc2brackets.utils.dayEnd
+import com.apx.sc2brackets.utils.dayStart
 import org.joda.time.DateTime
 import java.lang.StringBuilder
 
@@ -32,7 +34,7 @@ class MatchBracket(list: List<Match>, val isLoading: Boolean = false) {
 
     private fun addHeaders(list: List<Match>): List<BracketItem> {
         // group matches by category to be displayed under common header
-        val matchGroups = list.sortedBy { it.startTime }.groupBy { it.category }
+        val matchGroups = list.sortedBy { it.startTime }.groupBy { it.entity.category }
 
         // create headers with same indices as first matches of corresponding group
         val headers = Array<Header?>(list.size) { null }
@@ -58,19 +60,19 @@ class MatchBracket(list: List<Match>, val isLoading: Boolean = false) {
     }
 
     private fun getNextList(): List<BracketItem> {
-        val dayEnd = DateTime.now().withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59)
+        val dayEnd = dayEnd(DateTime.now())
         val list = matches.dropWhile { it.isBefore(dayEnd) }
         return addFooter(addHeaders(list))
     }
     private fun getPastList(): List<BracketItem> {
-        val dayStart = DateTime.now().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0)
+        val dayStart = dayStart(DateTime.now())
         val list = matches.takeWhile { it.isBefore(dayStart) }
         return addFooter(addHeaders(list))
     }
     private fun getTodayList(): List<BracketItem> {
         val now = DateTime.now()
-        val dayStart = now.withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0)
-        val dayEnd = now.withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59)
+        val dayStart = dayStart(now)
+        val dayEnd = dayEnd(now)
         val list = matches.dropWhile { it.isBefore(dayStart) }.takeWhile { it.isBefore(dayEnd) }
         return addFooter(addHeaders(list))
     }
