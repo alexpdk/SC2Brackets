@@ -6,7 +6,8 @@
                                                    android:layout_height="wrap_content"
                                                    android:background="@drawable/border_box"
                                                    android:padding="8dp"
-                                                   android:layout_marginBottom="10dp">
+                                                   android:layout_marginBottom="10dp"
+                                                   android:id="@+id/tournament_item_layout">
 
     <TextView
             tools:text="2019 WCS Spring: North America Qualifiers"
@@ -17,16 +18,14 @@
             app:layout_constraintTop_toTopOf="parent"
             style="@style/MainText"
             app:layout_constraintHorizontal_bias="0.0"
-            android:layout_marginEnd="48dp"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginEnd="8dp"
             android:gravity="center_vertical"
             android:paddingTop="0dp"
             android:paddingBottom="0dp"
-            app:layout_constraintBottom_toBottomOf="@+id/second_player_button"
-            />
+            app:layout_constraintEnd_toStartOf="@+id/open_bracket_button"/>
 
     <ImageButton
-            android:id="@+id/second_player_button"
+            android:id="@+id/open_bracket_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:srcCompat="@drawable/ic_right_arrow"
@@ -36,14 +35,15 @@
             android:background="@drawable/race_button"
             android:padding="8dp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent"
+            android:visibility="visible"/>
 
     <TextView
             android:text="Ended for today"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:id="@+id/tournament_status"
-            app:layout_constraintEnd_toEndOf="@+id/second_player_button"
+            app:layout_constraintEnd_toEndOf="@+id/open_bracket_button"
             app:layout_constraintStart_toStartOf="parent"
             style="@style/Subheader"
             android:textColor="@color/zergColor"

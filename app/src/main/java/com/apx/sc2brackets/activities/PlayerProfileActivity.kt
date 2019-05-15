@@ -35,6 +35,15 @@ class PlayerProfileActivity : AppCompatActivity(), CoroutineScope by CoroutineSc
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_player_profile)
 
+        supportActionBar?.apply {
+            setLogo(
+                ContextCompat.getDrawable(this@PlayerProfileActivity, R.mipmap.ic_launcher)
+            )
+            title = "Player Info"
+            setDisplayShowHomeEnabled(true)
+            setDisplayUseLogoEnabled(true)
+        }
+
         // Get the Intent that started this activity and extract the string
         val playerName = intent.getStringExtra(BracketActivity.PLAYER_NAME_INTENT_MESSAGE)
         val playerRace = intent.getSerializableExtra(BracketActivity.PLAYER_RACE_INTENT_MESSAGE) as Player.Race

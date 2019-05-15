@@ -9,7 +9,7 @@ import com.apx.sc2brackets.db.RaceTypeConverter
 @TypeConverters(RaceTypeConverter::class)
 data class Player(var name: String = "", var race: Race = Race.TBD) {
     enum class Race {
-        TERRAN, PROTOSS, ZERG, TBD
+        TERRAN, PROTOSS, ZERG, TBD, RANDOM
     }
     companion object {
         const val TO_BE_DEFINED = "TBD"

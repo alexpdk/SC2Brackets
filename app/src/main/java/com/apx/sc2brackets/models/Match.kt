@@ -4,7 +4,6 @@ import androidx.room.*
 import com.apx.sc2brackets.db.DateTimeTypeConverter
 import com.apx.sc2brackets.db.ScoreTypeConverter
 import org.joda.time.*
-import java.util.*
 import com.apx.sc2brackets.models.Player.Race.*
 import org.jetbrains.annotations.TestOnly
 
@@ -24,6 +23,7 @@ data class MatchEntity(
     @Embedded(prefix = "second_") var secondPlayer: Player,
     var category: String
 ) {
+    var isFinished: Boolean = false
 
     @ColumnInfo(name = "tournament_id")
     var tournamentID = 0
@@ -37,12 +37,38 @@ data class MatchEntity(
     // Null time means match is to be scheduled in the future
     @TypeConverters(DateTimeTypeConverter::class)
     var startTime: DateTime? = null
+
+    /*created and used only for testing purposes*/
+    @TestOnly
+    constructor(firstPlayerName: String, secondPlayerName: String, category: String) : this(
+        firstPlayer = Player(firstPlayerName, TBD),
+        secondPlayer = Player(secondPlayerName, TBD),
+        category = category
+    )
+
+    /*created and used only for testing purposes*/
+    @TestOnly
+    constructor(
+        firstPlayerName: String,
+        firstRace: Player.Race,
+        secondPlayerName: String,
+        secondRace: Player.Race,
+        category: String
+    ) : this(
+        firstPlayer = Player(firstPlayerName, firstRace),
+        secondPlayer = Player(secondPlayerName, secondRace),
+        category = category
+    )
 }
 
-class Match(firstPlayer: Player = Player.TBD, secondPlayer: Player = Player.TBD, category: String = "") :
+class Match(@Embedded var entity: MatchEntity) :
     MatchBracket.BracketItem {
-    @Embedded
-    var entity = MatchEntity(firstPlayer, secondPlayer, category)
+
+    constructor(firstPlayer: Player = Player.TBD, secondPlayer: Player = Player.TBD, category: String = "") : this(
+        MatchEntity(
+            firstPlayer, secondPlayer, category
+        )
+    )
 
     @Relation(entity = MatchMap::class, parentColumn = "id", entityColumn = "match_id")
             /**List of played matches sorted by start order.*/
@@ -52,32 +78,41 @@ class Match(firstPlayer: Player = Player.TBD, secondPlayer: Player = Player.TBD,
     @Ignore
     var detailsExpanded = false
 
-    override fun equals(other: Any?): Boolean {
-        return entity == other
-    }
-
-    override fun hashCode(): Int {
-        return entity.hashCode()
-    }
-
-    @Ignore
-    var isFinished = true
-
     val firstPlayer get() = entity.firstPlayer
-    /**Does match have any meaningful score (other than 0:0)*/
-    private val hasScore get() = entity.score.first > 0 || entity.score.second > 0
-    // Match with unknown time and score considered to be in the past, without score - in the future
-    fun isBefore(moment: DateTime) = entity.startTime?.isBefore(moment) ?: hasScore
-    /**Is match played right now*/
-    val isLive get() = isBefore(DateTime.now()) && !isFinished
+
+    private val hasScore get() = score.first != 0 || score.second != 0
+
+    var isFinished: Boolean
+        get() = entity.isFinished || (entity.startTime == null && hasScore)
+        set(value) {
+            entity.isFinished = value
+        }
+
+    /**Is match played right now: started before current moment, but not finished yet*/
+    val isLive get() = startsBefore(DateTime.now()) && !isFinished
 
     var score: Pair<Int, Int>
         get() = entity.score
         set(value) {
             entity.score = value
         }
+    val scoreString
+        get() = when {
+            score.first < 0 -> "-:W"
+            score.second < 0 -> "W:-"
+            else -> "${score.first}:${score.second}"
+        }
+
     val secondPlayer get() = entity.secondPlayer
 
+    fun startsAfter(moment: DateTime) = entity.startTime?.isAfter(moment) ?: !isFinished
+    fun startsBefore(moment: DateTime) = entity.startTime?.isBefore(moment) ?: isFinished
+
+    val startsInHour: Boolean
+        get() {
+            val now = DateTime.now()
+            return startsAfter(now) && startsBefore(now.plusHours(1))
+        }
     var startTime: DateTime?
         get() = entity.startTime
         set(value) {
@@ -89,24 +124,6 @@ class Match(firstPlayer: Player = Player.TBD, secondPlayer: Player = Player.TBD,
         set(value) {
             entity.tournamentID = value
         }
-
-    /*created and used only for testing purposes*/
-    @TestOnly
-    constructor(firstPlayer: String, secondPlayer: String, category: String) : this(
-        Player(firstPlayer, TBD), Player(secondPlayer, TBD), category
-    )
-
-    /*created and used only for testing purposes*/
-    @TestOnly
-    constructor(
-        firstPlayer: String,
-        firstRace: Player.Race,
-        secondPlayer: String,
-        secondRace: Player.Race,
-        category: String
-    ) : this(
-        Player(firstPlayer, firstRace), Player(secondPlayer, secondRace), category
-    )
 
     companion object {
         private val PLAYERS = listOf(

@@ -4,13 +4,14 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
-import android.view.View.GONE
-import android.view.View.VISIBLE
+import android.view.View.*
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import com.apx.sc2brackets.activities.MainActivity
 import com.apx.sc2brackets.R
@@ -32,14 +33,10 @@ class TournamentsRecyclerViewAdapter(
 ) :
     androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>() {
 
-    //TODO: remove navigator, call activity directly
-    var navigator: TournamentNavigator? = null
-
     //TODO: use MyResourceLoader, move it to application
     private val buttonIcon = ContextCompat.getDrawable(activityContext, R.drawable.ic_right_arrow)!!
 
     override fun onBindViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, position: Int) {
-        Log.i(TAG, "onBindViewHolder position = $position")
         if (position > 0) {
             val tournament = tournamentViewModel.tournaments[position - 1]
             val tagChanged = holder.itemView.tag != tournament
@@ -67,7 +64,10 @@ class TournamentsRecyclerViewAdapter(
     private val onHeaderButtonClick = View.OnClickListener { view: View ->
         val parent = view.parent
         if (parent is View) {
-            navigator?.goAndSave(Tournament(name = "", url = MainActivity.BASE_URL + parent.tournament_url.text))
+            (activityContext as MainActivity).openBracket(
+                Tournament(name = "", url = MainActivity.BASE_URL + parent.tournament_url.text),
+                suggestSave = true
+            )
         }
     }
 
@@ -76,7 +76,7 @@ class TournamentsRecyclerViewAdapter(
         if (parent is View) {
             val tag = parent.tag
             if (tag is Tournament) {
-                navigator?.goToTournament(tag)
+                (activityContext as MainActivity).openBracket(tag)
             }
         }
     }
@@ -115,7 +115,7 @@ class TournamentsRecyclerViewAdapter(
         private var tournamentInfo: View? = null
 
         fun onCreate(buttonIcon: Drawable) {
-            with(itemView.second_player_button) {
+            with(itemView.open_bracket_button) {
                 setImageDrawable(buttonIcon)
                 setOnClickListener(onItemButtonClick)
             }
@@ -124,15 +124,36 @@ class TournamentsRecyclerViewAdapter(
 
         fun onBind(tournament: Tournament, tagChanged: Boolean) {
             itemView.tournament_name.text = tournament.name
-            if (tournamentViewModel.itemExpanded[adapterPosition - 1]) {
+            val textAndColor = when (tournament.status) {
+                Tournament.Status.NO_SCHEDULE -> Pair(android.R.color.black, "Not scheduled")
+                Tournament.Status.HAS_SCHEDULE -> Pair(R.color.colorAccent, "Scheduled")
+                Tournament.Status.SOON -> Pair(R.color.protossColor, startPrefix + "soon")
+                Tournament.Status.TODAY -> Pair(R.color.brightOrange, startPrefix + "today")
+                Tournament.Status.LIVE -> Pair(R.color.liveGreen, "Live now!")
+                Tournament.Status.ENDED_FOR_TODAY -> Pair(R.color.zergColor, "Ended for today")
+                Tournament.Status.ENDED -> Pair(R.color.zergColor, "Ended")
+            }
+            itemView.tournament_status.text = textAndColor.second
+            itemView.tournament_status.setTextColor(ContextCompat.getColor(activityContext, textAndColor.first))
+
+            val expanded = tournamentViewModel.itemExpanded[adapterPosition - 1]
+            if (expanded) {
                 expandInfo()
+                itemView.open_bracket_button.visibility = INVISIBLE
             } else {
                 collapseInfo()
+                itemView.open_bracket_button.visibility = VISIBLE
             }
-            if(tagChanged) tournamentInfo?.run{
-                bracket_button.setOnClickListener { navigator?.goToTournament(itemView.tag as Tournament) }
+            updateTitleConstraint(expanded)
+
+            if (tagChanged) tournamentInfo?.run {
+                bracket_button.setOnClickListener { (activityContext as MainActivity).openBracket(itemView.tag as Tournament) }
                 update_button.setOnClickListener { update(itemView.tag as Tournament) }
             }
+        }
+
+        private fun collapseInfo() {
+            itemView.tournament_info_frame.visibility = GONE
         }
 
         private fun expandInfo() {
@@ -141,11 +162,21 @@ class TournamentsRecyclerViewAdapter(
                     .inflate(R.layout.tournament_info, itemView.tournament_info_frame, false)
                 itemView.tournament_info_frame.addView(tournamentInfo)
 
-                tournamentInfo?.notifications_switch?.thumbTintList =
-                    ContextCompat.getColorStateList(activityContext, R.color.switch_color)
+                tournamentInfo?.notifications_switch?.apply {
+                    thumbTintList = ContextCompat.getColorStateList(activityContext, R.color.switch_color)
+                    setOnCheckedChangeListener { _, isChecked ->
+                        tournamentViewModel.setAutoUpdate(tournament, value = isChecked)
+                        tournamentInfo?.notifications_switch_value?.text = if (isChecked) {
+                            "On"
+                        }else{
+                            "Off"
+                        }
+                    }
+                    isChecked = tournament.autoUpdateOn
+                }
             }
             itemView.tournament_info_frame.visibility = VISIBLE
-            tournamentInfo?.run{
+            tournamentInfo?.run {
                 // Set last update time
                 last_update_time.text = tournament.entity.lastUpdate.let {
                     "${timeDifference(DateTime.now(), it)} ago"
@@ -155,14 +186,58 @@ class TournamentsRecyclerViewAdapter(
                     countDown(it.startTime)
                         .plus("\n${it.firstPlayer.name} vs ${it.secondPlayer.name}")
                 } ?: "No next match"
+
+                tournament.liveMatch()?.let {
+                    live_match_label.visibility = VISIBLE
+                    live_match.visibility = VISIBLE
+                    live_match.text = "${it.firstPlayer.name} vs ${it.secondPlayer.name}".plus(
+                        it.scoreString
+                    )
+                } ?: let {
+                    live_match_label.visibility = GONE
+                    live_match.visibility = GONE
+                }
             }
         }
 
-        private fun collapseInfo() {
-            itemView.tournament_info_frame.visibility = GONE
-        }
+        private val startPrefix
+            get() = if (tournament.isStarted) {
+                "Resumes "
+            } else {
+                "Starts "
+            }
 
         val tournament get() = itemView.tag as Tournament
+
+        private fun updateTitleConstraint(expanded: Boolean) {
+            if (expanded) {
+                val constraintSet = ConstraintSet()
+                constraintSet.clone(itemView as ConstraintLayout)
+                constraintSet.connect(
+                    R.id.tournament_name,
+                    ConstraintSet.END,
+                    R.id.tournament_item_layout,
+                    ConstraintSet.END,
+                    8
+                )
+                constraintSet.applyTo(itemView)
+
+                itemView.tournament_name.gravity = Gravity.CENTER
+            } else {
+                val constraintSet = ConstraintSet()
+                constraintSet.clone(itemView as ConstraintLayout)
+                constraintSet.connect(
+                    R.id.tournament_name,
+                    ConstraintSet.END,
+                    R.id.open_bracket_button,
+                    ConstraintSet.START,
+                    8
+                )
+                constraintSet.applyTo(itemView)
+
+                itemView.tournament_name.gravity = Gravity.START
+            }
+        }
     }
 
     class TextChangeWatcher(private val onChange: () -> Unit) : TextWatcher {

@@ -14,6 +14,7 @@ class MyResourceLoader(val context: Context) {
     private val terranLogo: Drawable by lazy{ContextCompat.getDrawable(context, R.drawable.ic_terran)!!}
     private val protossLogo: Drawable by lazy{ContextCompat.getDrawable(context, R.drawable.ic_protoss)!!}
     private val zergLogo: Drawable by lazy{ContextCompat.getDrawable(context, R.drawable.ic_zerg)!!}
+    private val randomLogo: Drawable by lazy{ContextCompat.getDrawable(context, R.drawable.ic_dice)!!}
 
     private val terranWin: Drawable by lazy{ContextCompat.getDrawable(context, R.drawable.ic_knuckle)!!}
     private val protossWin: Drawable by lazy{ContextCompat.getDrawable(context, R.drawable.ic_star)!!}
@@ -30,6 +31,7 @@ class MyResourceLoader(val context: Context) {
         ZERG -> ContextCompat.getColor(context, R.color.zergBackground)
         TERRAN -> ContextCompat.getColor(context, R.color.terranBackground)
         TBD -> ContextCompat.getColor(context, R.color.neutralBackground)
+        RANDOM -> ContextCompat.getColor(context, R.color.neutralBackground)
     }
 
     fun getRaceColor(race: Race) = when (race) {
@@ -37,6 +39,7 @@ class MyResourceLoader(val context: Context) {
         ZERG -> ContextCompat.getColor(context, R.color.zergColor)
         TERRAN -> ContextCompat.getColor(context, R.color.terranColor)
         TBD -> ContextCompat.getColor(context, R.color.colorAccent)
+        RANDOM -> ContextCompat.getColor(context, android.R.color.black)
     }
 
     fun getRaceLogo(race: Race) = when (race) {
@@ -44,6 +47,7 @@ class MyResourceLoader(val context: Context) {
         ZERG -> zergLogo
         TERRAN -> terranLogo
         TBD -> _blank
+        RANDOM -> randomLogo
     }
 
     fun getRaceWinLogo(race: Race) = when (race) {
@@ -51,5 +55,6 @@ class MyResourceLoader(val context: Context) {
         ZERG -> zergWin
         TERRAN -> terranWin
         TBD -> _blank
+        RANDOM -> randomLogo
     }
 }

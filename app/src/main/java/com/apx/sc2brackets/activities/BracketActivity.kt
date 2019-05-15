@@ -23,6 +23,10 @@ import com.apx.sc2brackets.models.MatchBracket
 import com.apx.sc2brackets.view_models.BracketViewModel
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import android.app.Activity
+import androidx.core.content.ContextCompat
+import com.apx.sc2brackets.network.NetworkResponse
+import com.google.android.material.snackbar.Snackbar
 
 private const val TAG = "BracketActivity"
 
@@ -41,18 +45,22 @@ class BracketActivity : AppCompatActivity() {
         setMaxRecycledViews(R.layout.match_item, 15)
     }
     /**Suggest user to save tournament in database when returning to previous activity*/
-    private var suggestSave = false
+    private var suggestSaveAtTheEnd = false
 
     override fun onBackPressed() {
-        if (suggestSave) {
+        if (suggestSaveAtTheEnd) {
             AlertDialog.Builder(this, R.style.Theme_AppCompat_Dialog_MinWidth)
-                .setMessage("Would you like to keep tournament in list?")
+                .setMessage("Would you like to save this tournament in your list?")
                 .setPositiveButton("Save") { _, _ ->
-                    saveTournament()
-                    super.onBackPressed()
+                    bracketViewModel.saveTournament(bracketViewModel.tournament.value)
+                    val returnIntent = Intent()
+                    returnIntent.putExtra(TOURNAMENT_URL, bracketViewModel.tournament.value?.url)
+                    setResult(Activity.RESULT_OK, returnIntent)
+                    finish()
                 }
                 .setNegativeButton("Discard") { _, _ ->
-                    super.onBackPressed()
+                    setResult(Activity.RESULT_CANCELED)
+                    finish()
                 }
                 .setCancelable(false)
                 .show()
@@ -67,8 +75,16 @@ class BracketActivity : AppCompatActivity() {
         setContentView(R.layout.activity_brackets)
         setSupportActionBar(toolbar)
 
-        bracketViewModel = getViewModel(savedInstanceState)
-        loadTournamentData()
+        supportActionBar?.apply {
+            setLogo(
+                ContextCompat.getDrawable(this@BracketActivity, R.mipmap.ic_launcher)
+            )
+            title = "Bracket"
+            setDisplayShowHomeEnabled(true)
+            setDisplayUseLogoEnabled(true)
+        }
+
+        retrieveTournamentData(savedInstanceState)
 
         bracketViewPager.adapter =
             BracketFragmentPagerAdapter(supportFragmentManager)
@@ -80,10 +96,19 @@ class BracketActivity : AppCompatActivity() {
             bracketViewModel.updateTournament()
         }
 
+        bracketViewModel.tournament.observe(this, Observer {
+            if (it != null) {
+                if (bracketViewModel.networkResponse.value?.handler != NetworkResponse.Handler.AUTO_UPDATE) {
+                    bracketViewModel.restartTimer(it)
+                }
+            }
+        })
         bracketViewModel.networkResponse.observe(this, Observer {
             it?.apply {
-                if (!isSuccessful) {
-                    showPageNotFoundAlert()
+                if (it.handler == NetworkResponse.Handler.AUTO_UPDATE) {
+                    showAutoUpdateResult(success = it.isSuccessful)
+                } else if (!isSuccessful) {
+                    alerts.showPageNotFoundAlert()
                 }
             }
         })
@@ -91,7 +116,7 @@ class BracketActivity : AppCompatActivity() {
             if (it != null && !it.isLoading) {
                 progressBar.visibility = GONE
                 if (it.isEmpty()) {
-                    showDataNotAvailableAlert()
+                    alerts.showDataNotAvailableAlert()
                     return@Observer
                 }
                 with(BracketFragmentPagerAdapter) {
@@ -111,10 +136,10 @@ class BracketActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle?) {
         Log.i(TAG, "onSaveInstanceState called")
         bracketViewModel.tournament.value?.let {
-            outState?.putString(TOURNAMENT_URL_STATE, it.url)
-            outState?.putBoolean(SUGGEST_SAVE_STATE, suggestSave)
+            outState?.putString(TOURNAMENT_URL, it.url)
+            outState?.putBoolean(SUGGEST_SAVE, suggestSaveAtTheEnd)
             if (it.name != null) {
-                outState?.putString(TOURNAMENT_NAME_STATE, it.name)
+                outState?.putString(TOURNAMENT_NAME, it.name)
             }
         }
         if (outState == null || bracketViewModel.tournament.value == null) {
@@ -123,44 +148,47 @@ class BracketActivity : AppCompatActivity() {
         super.onSaveInstanceState(outState)
     }
 
-    private fun getViewModel(savedInstanceState: Bundle?): BracketViewModel {
-        val bracketViewModel = ViewModelProviders.of(this).get(BracketViewModel::class.java)
+    private fun retrieveTournamentData(savedInstanceState: Bundle?) {
+        bracketViewModel = ViewModelProviders.of(this).get(BracketViewModel::class.java)
         val database = (applicationContext as SC2BracketsApplication).tournamentDatabase
 
         when {
             //Activity open when returning back from child activity, ViewModel persisted
             bracketViewModel.tournament.value != null -> Unit
             //Activity open to show tournament bracket
-            intent.hasExtra(MainActivity.TOURNAMENT_URL) -> {
-                bracketViewModel.setDatabaseAndURL(
+            intent.hasExtra(TOURNAMENT_URL) -> {
+                suggestSaveAtTheEnd = intent.getBooleanExtra(SUGGEST_SAVE, false)
+                bracketViewModel.setDatabase(
                     database = database,
-                    tournamentURL = intent.getStringExtra(MainActivity.TOURNAMENT_URL)
+                    syncWithDatabase = !suggestSaveAtTheEnd
                 )
-                suggestSave = intent.getBooleanExtra(MainActivity.SUGGEST_SAVE, false)
+                loadTournamentData(intent.getStringExtra(TOURNAMENT_URL))
             }
             // Activity was deleted and ViewModel lost, restoring from savedInstanceState
             savedInstanceState != null -> {
-                bracketViewModel.setDatabaseAndURL(
+                suggestSaveAtTheEnd = savedInstanceState.getBoolean(SUGGEST_SAVE, false)
+                bracketViewModel.setDatabase(
                     database = database,
-                    tournamentURL = savedInstanceState.getString(TOURNAMENT_URL_STATE)!!
+                    syncWithDatabase = !suggestSaveAtTheEnd
                 )
-                suggestSave = savedInstanceState.getBoolean(SUGGEST_SAVE_STATE, false)
+                savedInstanceState.getString(TOURNAMENT_URL)?.let {
+                    loadTournamentData(it)
+                }
             }
             else -> throw IllegalStateException("Activity open with no tournament referenced")
         }
-        return bracketViewModel
     }
 
-    private fun loadTournamentData() {
-        val async = bracketViewModel.getTournamentDataAsync(isTournamentKnown = !suggestSave)
-        if (suggestSave) {
+    private fun loadTournamentData(tournamentURL: String) {
+        val async = bracketViewModel.getTournamentDataAsync(tournamentURL)
+        if (suggestSaveAtTheEnd) {
             progressBar.visibility = VISIBLE
         }
         //avoid suggesting to save tournament if it is already known
         GlobalScope.launch {
             val urlUsed = async.await()
             if (urlUsed) {
-                suggestSave = false
+                suggestSaveAtTheEnd = false
             }
         }
     }
@@ -173,24 +201,44 @@ class BracketActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
-    private fun saveTournament() {
-        bracketViewModel.saveTournament(isTournamentKnown = !suggestSave)
+    private fun showAutoUpdateResult(success: Boolean) {
+        Snackbar.make(
+            include, if (success) {
+                "Auto-update complete"
+            } else {
+                "Auto-update failed"
+            }, Snackbar.LENGTH_LONG
+        )
+            .show()
     }
 
-    private fun showDataNotAvailableAlert() =
-        FinishAlert(this, "Sorry, cannot extract useful data from this page").show()
+    inner class Alerts(private val activity: Activity){
+        private var displayed = false
 
-    private fun showPageNotFoundAlert() = FinishAlert(
-        this,
-        "Cannot load this web page from the site"
-    ).show()
+        fun showDataNotAvailableAlert() {
+            if(!displayed){
+                displayed = true
+                bracketViewModel.stopTimer()
+                FinishAlert(activity, "Sorry, cannot extract useful data from this page").show()
+            }
+        }
+
+        fun showPageNotFoundAlert() {
+            if(!displayed){
+                displayed = true
+                bracketViewModel.stopTimer()
+                FinishAlert(activity,"Cannot load this web page from the site").show()
+            }
+        }
+    }
+    private val alerts = Alerts(this)
 
     companion object {
         const val PLAYER_NAME_INTENT_MESSAGE = "com.apx.sc2brackets.player_name"
         const val PLAYER_RACE_INTENT_MESSAGE = "com.apx.sc2brackets.player_race"
 
-        private const val TOURNAMENT_NAME_STATE = "TOURNAMENT_NAME_STATE"
-        private const val TOURNAMENT_URL_STATE = "TOURNAMENT_URL_STATE"
-        private const val SUGGEST_SAVE_STATE = "SUGGEST_SAVE_STATE"
+        const val TOURNAMENT_NAME = "TOURNAMENT_NAME"
+        const val TOURNAMENT_URL = "TOURNAMENT_URL"
+        const val SUGGEST_SAVE = "SUGGEST_SAVE"
     }
 }

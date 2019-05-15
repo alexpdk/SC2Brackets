@@ -18,9 +18,9 @@ class MatchBracket(list: List<Match>, val isLoading: Boolean = false) {
     private var pastList = getPastList()
     private var todayList = getTodayList()
 
-    private fun addFooter(list: List<BracketItem>): List<BracketItem>{
+    private fun addFooter(list: List<BracketItem>): List<BracketItem> {
         val footer = Header(
-            when{
+            when {
                 isLoading -> LOADING_MATCHES_TEXT
                 list.isEmpty() -> NO_MATCHES_TEXT
                 list.last() == matches.last() -> BRACKET_END_TEXT
@@ -61,28 +61,50 @@ class MatchBracket(list: List<Match>, val isLoading: Boolean = false) {
 
     private fun getNextList(): List<BracketItem> {
         val dayEnd = dayEnd(DateTime.now())
-        val list = matches.dropWhile { it.isBefore(dayEnd) }
+        val list = matches.dropWhile { it.startsBefore(dayEnd) }
         return addFooter(addHeaders(list))
     }
+
     private fun getPastList(): List<BracketItem> {
         val dayStart = dayStart(DateTime.now())
-        val list = matches.takeWhile { it.isBefore(dayStart) }
+        val list = matches.takeWhile { it.startsBefore(dayStart) }
         return addFooter(addHeaders(list))
     }
+
     private fun getTodayList(): List<BracketItem> {
         val now = DateTime.now()
         val dayStart = dayStart(now)
         val dayEnd = dayEnd(now)
-        val list = matches.dropWhile { it.isBefore(dayStart) }.takeWhile { it.isBefore(dayEnd) }
+        val list = matches.dropWhile { it.startsBefore(dayStart) }.takeWhile { it.startsBefore(dayEnd) }
         return addFooter(addHeaders(list))
+    }
+
+    fun hasItemList(itemList: List<BracketItem>): Boolean {
+        if (list.size != itemList.size) {
+            return false
+        }
+        return itemList.zip(list).all {
+            val first = it.first
+            val second = it.second
+            when (first) {
+                is Match -> if (second is Match) {
+                    first.entity == second.entity
+                } else {
+                    false
+                }
+                else -> first == second
+            }
+        }
     }
 
     fun isEmpty() = matches.isEmpty()
 
     val list: List<BracketItem> get() = listWithHeaders
 
-    fun remove(match: Match) {
-        matches.remove(match)
+    fun remove(matchEntity: MatchEntity) {
+        with(matches) {
+            remove(find { it.entity == matchEntity })
+        }
         listWithHeaders = addFooter(addHeaders(matches))
         nextList = getNextList()
         pastList = getPastList()
@@ -91,10 +113,10 @@ class MatchBracket(list: List<Match>, val isLoading: Boolean = false) {
 
     override fun toString(): String {
         val b = StringBuilder("MatchBracket(")
-        if(list.isNotEmpty()){
+        if (list.isNotEmpty()) {
             b.append("Header = ${list[0]}")
         }
-        if(matches.isNotEmpty()){
+        if (matches.isNotEmpty()) {
             b.append("\nFirst match = ${matches[0]}")
         }
         b.append(")")

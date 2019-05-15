@@ -31,7 +31,12 @@ class TournamentPage private constructor(override val document: Document) : Pars
             it.select("img+span").text().ifEmpty { "TBD" }
         }
         val matchPoints = matchBlock.selectNotEmpty(Selectors.matchPoints)
-            .eachText().map { it.toInt() }
+            .eachText().map { when(it){
+                "L" -> -1
+                "-" -> -1
+                "W" -> 1
+                else -> it.toInt()
+            }}
             .ifEmpty { listOf(0, 0) }
 
         val races = matchBlock.select(

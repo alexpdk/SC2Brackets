@@ -3,6 +3,7 @@ package com.apx.sc2brackets.models
 import androidx.room.*
 import com.apx.sc2brackets.db.DateTimeTypeConverter
 import com.apx.sc2brackets.utils.dayEnd
+import com.apx.sc2brackets.utils.dayStart
 import org.joda.time.DateTime
 
 @Entity(indices = [Index(value = ["url"], unique = true)], tableName = "tournament")
@@ -17,20 +18,38 @@ import org.joda.time.DateTime
 data class TournamentEntity(
     val name: String?,
     val url: String,
-    var lastUpdate: DateTime
+    var lastUpdate: DateTime,
+    var autoUpdate: Boolean
 ) {
     @PrimaryKey(autoGenerate = true)
     var id: Int = 0
 }
 
+private const val TAG = "Tournament"
+
 class Tournament(name: String? = null, url: String = "", lastUpdate: DateTime = DateTime.now()) {
     @Embedded
-    var entity = TournamentEntity(name, url, lastUpdate)
+    var entity = TournamentEntity(name, url, lastUpdate, false)
 
+    /**List of played matches sorted by start order.*/
     @Relation(entity = MatchEntity::class, parentColumn = "id", entityColumn = "tournament_id")
-            /**List of played matches sorted by start order.*/
     var matches: List<Match> = emptyList()
+        set(value) {
+            field = value
+            val last = lastMatch()
+            val now = DateTime.now()
+            field.forEach {
+                if (it.startsBefore(now) && it != last) {
+                    it.isFinished = true
+                }
+            }
+        }
 
+    var autoUpdateOn: Boolean
+        get() = entity.autoUpdate
+        set(value) {
+            entity.autoUpdate = value
+        }
     var lastUpdate: DateTime
         get() = entity.lastUpdate
         set(value) {
@@ -40,19 +59,17 @@ class Tournament(name: String? = null, url: String = "", lastUpdate: DateTime = 
     val name get() = entity.name
     val url get() = entity.url
 
-    fun copy(name: String? = null, url: String = "", lastUpdate: DateTime = DateTime.now()): Tournament =
-        Tournament(name, url, lastUpdate).let {
-            it.entity = entity.copy()
-            it.matches = matches
-            it
-        }
+    /**Is tournament started (first match alive or played)*/
+    val isStarted get() = matches.isNotEmpty() && matches[0].startsBefore(DateTime.now())
+
+    fun lastMatch(): Match? = matches.lastOrNull { it.startsBefore(DateTime.now()) }
 
     /**Returns match that is played right now in the tournament or null if no match is alive*/
-    fun liveMatch(): Match? = matches.firstOrNull { it.isLive }
+    fun liveMatch() = lastMatch()?.takeIf { it.isLive }
 
     /**Returns next match that will be played in tournament, if it is not over, else null.
      * If last match of the tournament is currently live, returns null.  */
-    fun nextMatch(): Match? = matches.firstOrNull { !it.isBefore(DateTime.now()) }
+    fun nextMatch(): Match? = matches.firstOrNull { it.startsAfter(DateTime.now()) }
 
     /**See [TournamentEntity] documentation for design reason*/
     var primaryKey: Int
@@ -66,14 +83,14 @@ class Tournament(name: String? = null, url: String = "", lastUpdate: DateTime = 
             val now = DateTime.now()
             val next = nextMatch()
             val startTime = next?.startTime
-            when {
+            return when {
                 matches.isEmpty() -> Status.NO_SCHEDULE
                 next == null -> Status.ENDED
                 startTime == null -> Status.NO_SCHEDULE
                 startTime.isAfter(now.plusDays(SOON_TIME_DAYS)) -> Status.HAS_SCHEDULE
                 startTime.isAfter(dayEnd(now)) -> Status.SOON
                 liveMatch() != null -> Status.LIVE
-                else-> Status.TODAY
+                else -> Status.TODAY
             }
         }
 
@@ -88,16 +105,20 @@ class Tournament(name: String? = null, url: String = "", lastUpdate: DateTime = 
                 url = "https://liquipedia.net/starcraft2/2019_WCS_Spring/Qualifiers/Europe"
             ),
             Tournament(
-                name = "2019 WCS Spring: North America Qualifier",
-                url = "https://liquipedia.net/starcraft2/2019_WCS_Spring/Qualifiers/North_America"
-            ),
-            Tournament(
                 name = "IEM Season XIII - Katowice",
                 url = "https://liquipedia.net/starcraft2/IEM_Season_XIII_-_Katowice"
             ),
             Tournament(
                 name = "Red Hot Cup #1",
                 url = "https://liquipedia.net/starcraft2/Red_Hot_Cup/1"
+            ),
+            Tournament(
+                name = "Young Leonid",
+                url = "https://liquipedia.net/starcraft2/Young_Leonid"
+            ),
+            Tournament(
+                name = "Liga Akademicka Season 3",
+                url = "https://liquipedia.net/starcraft2/Liga_Akademicka_Season_3"
             )
         )
         private const val SOON_TIME_DAYS = 3

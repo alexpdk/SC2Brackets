@@ -6,9 +6,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.apx.sc2brackets.db.TournamentDao
 import com.apx.sc2brackets.db.TournamentDatabase
-import com.apx.sc2brackets.models.NetworkResponse
+import com.apx.sc2brackets.network.NetworkResponse
 import com.apx.sc2brackets.models.Tournament
 import com.apx.sc2brackets.network.TournamentDataLoader
+import com.apx.sc2brackets.timers.TournamentTimerList
 import com.apx.sc2brackets.utils.replace
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -25,6 +26,10 @@ class TournamentViewModel : ViewModel(), CoroutineScope by CoroutineScope(Dispat
      * If item index == [FULL_UPDATE_INDEX], then the whole list should be updated.*/
     val itemChanged get() :LiveData<Int> = _itemChanged
 
+    private val _itemRemoved = MutableLiveData<Int>()
+    /**Special case of [itemChanged] for removing items from list*/
+    val itemRemoved get() :LiveData<Int> = _itemRemoved
+
     private var _itemsExpanded = emptyList<Boolean>().toMutableList()
     /**List of boolean values to mark which list items are expanded*/
     val itemExpanded: List<Boolean> get() = _itemsExpanded
@@ -32,6 +37,11 @@ class TournamentViewModel : ViewModel(), CoroutineScope by CoroutineScope(Dispat
     private val _networkResponse = MutableLiveData<NetworkResponse<String>>()
     /**Most recent response for network update of tournament info*/
     val networkResponse: LiveData<NetworkResponse<String>> get() = _networkResponse
+
+    private val timerList = TournamentTimerList(
+        scope = this,
+        callback = {onTimerUpdate(it)}
+    )
 
     private var _tournaments = emptyList<Tournament>().toMutableList()
     val tournaments: List<Tournament> get() = _tournaments
@@ -51,15 +61,30 @@ class TournamentViewModel : ViewModel(), CoroutineScope by CoroutineScope(Dispat
             withContext(Dispatchers.Main) {
                 _tournaments.add(it)
                 _itemsExpanded.add(false)
-                _itemChanged.value = _tournaments.size-1
+                _itemChanged.value = _tournaments.size - 1
+                if(it.autoUpdateOn){
+                    timerList.addTimerFor(it)
+                }
             }
         }
     }
 
-    private suspend fun loadTournamentInfo(url: String) = updateRequestMutex.withLock {
+    private suspend fun loadTournamentInfo(url: String, isAutoUpdate: Boolean) = updateRequestMutex.withLock {
         val loader = TournamentDataLoader(url)
-        _networkResponse.postValue(loader.fetchPage())
-        return@withLock loader.loadTournament()
+        _networkResponse.postValue(loader.fetchPage()?.apply {
+            if (isAutoUpdate) {
+                setHander(NetworkResponse.Handler.AUTO_UPDATE)
+            }
+        })
+        return@withLock loader.loadTournament(
+            //retain auto-update value of previous tournament in the list
+            _tournaments.find { it.url == url }?.autoUpdateOn == true
+        )
+    }
+
+    private suspend fun onTimerUpdate(tournament: Tournament) = let{
+        Log.i(TAG, "timer update")
+        updateTournamentAsync(tournament.url, autoUpdate = true).await()
     }
 
     /**Remove item from current list and from database*/
@@ -68,10 +93,24 @@ class TournamentViewModel : ViewModel(), CoroutineScope by CoroutineScope(Dispat
         if (index >= 0) {
             _tournaments.removeAt(index)
             _itemsExpanded.removeAt(index)
-            _itemChanged.value = index
+            _itemRemoved.value = index
+            timerList.removeTimerFor(tournament)
             launch {
                 dao.delete(tournament)
             }
+        }
+    }
+
+    fun setAutoUpdate(tournament: Tournament, value: Boolean) {
+        tournament.autoUpdateOn = value
+        if(value){
+            timerList.addTimerFor(tournament)
+        }else{
+            timerList.removeTimerFor(tournament)
+        }
+        launch {
+            //update only data entity without matches
+            dao.update(tournament.entity)
         }
     }
 
@@ -86,8 +125,23 @@ class TournamentViewModel : ViewModel(), CoroutineScope by CoroutineScope(Dispat
                 // set new list and update view
                 withContext(Dispatchers.Main) {
                     _tournaments = list.toMutableList()
+                    timerList.init(tournaments = list)
                     _itemsExpanded = Array(_tournaments.size) { false }.toMutableList()
                     _itemChanged.value = FULL_UPDATE_INDEX
+                }
+            }
+        }
+    }
+
+    /**After activity was paused, it is necessary to resync data with database, as tournament records
+     * could be updated by other activities*/
+    fun syncWithDatabase() = launch {
+        if (_tournaments.isNotEmpty()) {
+            val all = dao.getAllTournaments()
+            all.forEachIndexed { index, dbRecord ->
+                if (index < tournaments.size && dbRecord.lastUpdate.isAfter(_tournaments[index].lastUpdate)) {
+                    _tournaments[index] = dbRecord
+                    _itemChanged.postValue(index)
                 }
             }
         }
@@ -99,10 +153,9 @@ class TournamentViewModel : ViewModel(), CoroutineScope by CoroutineScope(Dispat
     }
 
     /**Retrieve tournament info from network and update tournament in list and database*/
-    fun updateTournament(url: String) = launch {
-        val newTournament = loadTournamentInfo(url)
+    fun updateTournamentAsync(url: String, autoUpdate: Boolean = false) = async {
+        val newTournament = loadTournamentInfo(url, isAutoUpdate = autoUpdate)
         if (newTournament != null) {
-
             //update tournament list in main thread
             val success = withContext(Dispatchers.Main) {
                 //if oldTournament is not found in the list, then it was removed by user
@@ -117,12 +170,19 @@ class TournamentViewModel : ViewModel(), CoroutineScope by CoroutineScope(Dispat
             if (success) {
                 dao.updateIfExists(url, newTournament)
             }
+        } else if (!autoUpdate) {
+            //reset "Updating" state after error
+            _itemChanged.postValue(UPDATE_ERROR_INDEX)
         }
+        newTournament
     }
 
     companion object {
         /**Special value for [itemChanged] LiveData. Indicates that adapter should update the whole list,
          * not some specific item.*/
         const val FULL_UPDATE_INDEX = -55
+        /**Special value for [itemChanged] LiveData. Indicates that update operation failed and lists should not be updated,
+         * but pending things like ProgressBar still disabled.*/
+        const val UPDATE_ERROR_INDEX = -1
     }
 }

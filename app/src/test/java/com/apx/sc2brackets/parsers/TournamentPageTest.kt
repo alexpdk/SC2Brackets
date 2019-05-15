@@ -1,6 +1,7 @@
 package com.apx.sc2brackets.parsers
 
 import com.apx.sc2brackets.models.Match
+import com.apx.sc2brackets.models.MatchEntity
 import com.apx.sc2brackets.models.MatchMap
 import com.apx.sc2brackets.models.Player
 import org.junit.jupiter.api.Test
@@ -66,8 +67,8 @@ class TournamentPageTest {
     fun `Test HERO_TRAP match parsing`() {
         val match = matches.Hero_Trap.getMatch(matches.Hero_Trap.document, "Round of 12")
         assertThat(
-            match, equalTo(
-                Match(
+            match.entity, equalTo(
+                MatchEntity(
                     Player("herO", PROTOSS),
                     Player("Trap", PROTOSS),
                     "Round of 12"
@@ -101,8 +102,8 @@ class TournamentPageTest {
     fun `Test STATS_DARK match parsing`() {
         val match = matches.Stats_Dark.getMatch(matches.Stats_Dark.document, "Semifinals")
         assertThat(
-            match, equalTo(
-                Match(
+            match.entity, equalTo(
+                MatchEntity(
                     Player("Stats", PROTOSS),
                     Player("Dark", ZERG),
                     "Semifinals"
@@ -140,8 +141,8 @@ class TournamentPageTest {
     fun `Test SERRAL_TBD match parsing`() {
         val match = matches.Serral_TBD.getMatch(matches.Serral_TBD.document, "Quarterfinals")
         assertThat(
-            match, equalTo(
-                Match("Serral", ZERG, "TBD", TBD, "Quarterfinals")
+            match.entity, equalTo(
+                MatchEntity("Serral", ZERG, "TBD", TBD, "Quarterfinals")
             )
         )
         assertThat(match.score, equalTo(Pair(0, 0)))
@@ -161,8 +162,8 @@ class TournamentPageTest {
     fun `Test Bly_Enigma match parsing`() {
         val match = matches.Bly_Enigma.getMatch(matches.Bly_Enigma.document, "Quarterfinals")
         assertThat(
-            match, equalTo(
-                Match("Bly", TBD, "EnigmA", TBD, "Quarterfinals")
+            match.entity, equalTo(
+                MatchEntity("Bly", TBD, "EnigmA", TBD, "Quarterfinals")
             )
         )
         assertThat(match.score, equalTo(Pair(2, 0)))
@@ -176,19 +177,19 @@ class TournamentPageTest {
     fun `Test IEM_Katowice bracket parsing`() {
         val matches = matches.IEM_Katowice.getMatchList()
         assertThat(
-            matches, equalTo(
+            matches.map { it.entity }, equalTo(
                 listOf(
-                    Match("herO", PROTOSS, "Trap", PROTOSS, "Round of 12 (Bo5)"),
-                    Match("Zest", PROTOSS, "soO", ZERG, "Round of 12 (Bo5)"),
-                    Match("Neeb", PROTOSS, "RagnaroK", ZERG, "Round of 12 (Bo5)"),
-                    Match("TY", TERRAN, "Solar", ZERG, "Round of 12 (Bo5)"),
-                    Match("Dear", PROTOSS, "herO", PROTOSS, "Quarterfinals (Bo5)"),
-                    Match("Serral", ZERG, "soO", ZERG, "Quarterfinals (Bo5)"),
-                    Match("Stats", PROTOSS, "Neeb", PROTOSS, "Quarterfinals (Bo5)"),
-                    Match("Dark", ZERG, "Solar", ZERG, "Quarterfinals (Bo5)"),
-                    Match("herO", PROTOSS, "soO", ZERG, "Semifinals (Bo5)"),
-                    Match("Stats", PROTOSS, "Dark", ZERG, "Semifinals (Bo5)"),
-                    Match("soO", ZERG, "Stats", PROTOSS, "Finals (Bo7)")
+                    MatchEntity("herO", PROTOSS, "Trap", PROTOSS, "Round of 12 (Bo5)"),
+                    MatchEntity("Zest", PROTOSS, "soO", ZERG, "Round of 12 (Bo5)"),
+                    MatchEntity("Neeb", PROTOSS, "RagnaroK", ZERG, "Round of 12 (Bo5)"),
+                    MatchEntity("TY", TERRAN, "Solar", ZERG, "Round of 12 (Bo5)"),
+                    MatchEntity("Dear", PROTOSS, "herO", PROTOSS, "Quarterfinals (Bo5)"),
+                    MatchEntity("Serral", ZERG, "soO", ZERG, "Quarterfinals (Bo5)"),
+                    MatchEntity("Stats", PROTOSS, "Neeb", PROTOSS, "Quarterfinals (Bo5)"),
+                    MatchEntity("Dark", ZERG, "Solar", ZERG, "Quarterfinals (Bo5)"),
+                    MatchEntity("herO", PROTOSS, "soO", ZERG, "Semifinals (Bo5)"),
+                    MatchEntity("Stats", PROTOSS, "Dark", ZERG, "Semifinals (Bo5)"),
+                    MatchEntity("soO", ZERG, "Stats", PROTOSS, "Finals (Bo7)")
                 )
             )
         )
@@ -198,15 +199,15 @@ class TournamentPageTest {
     fun `Test WCS Spring Qualifiers bracket parsing`() {
         val matches = matches.WCS_Spring_Qualifiers.getMatchList()
         assertThat(
-            matches, equalTo(
+            matches.map { it.entity }, equalTo(
                 listOf(
-                    Match("Serral", ZERG, "TBD", TBD, "Quarterfinals (Bo5)"),
-                    Match("TBD", TBD, "TBD", TBD, "Quarterfinals (Bo5)"),
-                    Match("TBD", TBD, "TBD", TBD, "Quarterfinals (Bo5)"),
-                    Match("TBD", TBD, "TBD", TBD, "Quarterfinals (Bo5)"),
-                    Match("TBD", TBD, "TBD", TBD, "Semifinals (Bo5)"),
-                    Match("TBD", TBD, "TBD", TBD, "Semifinals (Bo5)"),
-                    Match("TBD", TBD, "TBD", TBD, "Finals (Bo7)")
+                    MatchEntity("Serral", ZERG, "TBD", TBD, "Quarterfinals (Bo5)"),
+                    MatchEntity("TBD", TBD, "TBD", TBD, "Quarterfinals (Bo5)"),
+                    MatchEntity("TBD", TBD, "TBD", TBD, "Quarterfinals (Bo5)"),
+                    MatchEntity("TBD", TBD, "TBD", TBD, "Quarterfinals (Bo5)"),
+                    MatchEntity("TBD", TBD, "TBD", TBD, "Semifinals (Bo5)"),
+                    MatchEntity("TBD", TBD, "TBD", TBD, "Semifinals (Bo5)"),
+                    MatchEntity("TBD", TBD, "TBD", TBD, "Finals (Bo7)")
                 )
             )
         )

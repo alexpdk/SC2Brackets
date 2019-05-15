@@ -1,6 +1,7 @@
 package com.apx.sc2brackets.components
 
 import android.content.Context
+import android.graphics.Typeface
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -75,14 +76,16 @@ class MatchViewHolder(val view: View, private val context: Context) :
         //Detailed info: https://antonioleiva.com/kotlin-android-extensions/
         view.first_player_name.text = match.firstPlayer.name
         view.second_player_name.text = match.secondPlayer.name
-        view.match_score.text = match.score.run { "$first:$second" }
-        val colorID = if (match.isLive) {
-            R.color.liveGreen
-        } else {
-            android.R.color.black
+        with(view.match_score){
+            if (match.isLive) {
+                setTypeface(null, Typeface.ITALIC)
+                setTextColor(ContextCompat.getColor(context, R.color.liveGreen))
+            } else {
+                setTypeface(null, Typeface.NORMAL)
+                setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            }
+            text = match.scoreString
         }
-        view.match_score.setTextColor(ContextCompat.getColor(context, colorID))
-
         val resourceLoader = (context as BracketActivity).resourceLoader
         view.first_player_button.setImageDrawable(
             resourceLoader.getRaceLogo(match.firstPlayer.race)
@@ -109,10 +112,10 @@ class MatchViewHolder(val view: View, private val context: Context) :
         val s = StringBuilder()
         s.append(stringify(match.startTime))
         s.append('\n')
-        if (match.isFinished) {
-            s.append(countDown(match.startTime))
-        } else {
+        if (match.isLive) {
             s.append("Live (started ${countDown(match.startTime)})")
+        } else {
+            s.append(countDown(match.startTime))
         }
         return s.toString()
     }

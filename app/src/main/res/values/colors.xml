@@ -11,6 +11,7 @@
 
     <color name="lightGrey">#929292</color>
     <color name="liveGreen">#2e7d32</color>
+    <color name="brightOrange">#e65100</color>
 
     <color name="terranColor">#1516ff</color>
     <color name="zergColor">#FF2400</color>

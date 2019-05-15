@@ -26,7 +26,7 @@
 
     <TextView
             android:id="@+id/first_player_name"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceListItem"
             tools:text="Serral"
@@ -36,28 +36,31 @@
             android:layout_marginBottom="8dp"
             app:layout_constraintBottom_toTopOf="@id/match_details_frame"
             android:layout_marginStart="8dp"
-            android:layout_marginLeft="8dp"
-            android:textSize="18sp"/>
+            android:textSize="18sp"
+            android:layout_marginEnd="8dp"
+            app:layout_constraintEnd_toStartOf="@+id/match_score"/>
 
     <TextView
             android:id="@+id/match_score"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:textAppearance="?attr/textAppearanceListItem"
             tools:text="0:0"
             app:fontFamily="sans-serif-black"
             android:textSize="28sp"
-            app:layout_constraintBaseline_toBaselineOf="@+id/first_player_name"
             android:layout_marginEnd="8dp"
             app:layout_constraintEnd_toStartOf="@+id/second_player_button"
-            android:layout_marginRight="8dp"
             app:layout_constraintStart_toEndOf="@+id/first_player_button"
             android:layout_marginStart="8dp"
-            android:layout_marginLeft="8dp"/>
+            android:layout_marginBottom="8dp"
+            app:layout_constraintBottom_toTopOf="@id/match_details_frame"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toTopOf="parent"
+            android:gravity="center"/>
 
     <TextView
             android:id="@+id/second_player_name"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceListItem"
             tools:text="ShowTime"
@@ -67,8 +70,9 @@
             app:layout_constraintBottom_toTopOf="@id/match_details_frame"
             android:layout_marginEnd="8dp"
             app:layout_constraintEnd_toStartOf="@+id/second_player_button"
-            android:layout_marginRight="8dp"
-            android:textSize="18sp"/>
+            android:textSize="18sp"
+            app:layout_constraintStart_toEndOf="@+id/match_score"
+            android:layout_marginStart="8dp"/>
 
     <ImageButton
             android:id="@+id/second_player_button"

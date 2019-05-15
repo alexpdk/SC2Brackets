@@ -32,7 +32,6 @@ class SC2BracketsApplication : Application() {
         override fun onCreate(db: SupportSQLiteDatabase) {
             super.onCreate(db)
             resetTournamentData()
-            resetMatchData()
         }
 
         override fun onOpen(db: SupportSQLiteDatabase) {
@@ -40,17 +39,17 @@ class SC2BracketsApplication : Application() {
 //            resetMatchData()
         }
 
-        private fun resetMatchData() {
-            GlobalScope.launch(Dispatchers.IO) {
-                Tournament.DEFAULT_KNOWN_LIST.forEach {
-                    val current = tournamentDatabase.dao().getOrInsertDefault(it.url, defaultValue = it)
-                    tournamentDatabase.dao().replaceMatches(
-                        foreignKey = current.primaryKey,
-                        newMatches = Array(5) { Match.random() }.toList()
-                    )
-                }
-            }
-        }
+//        private fun resetMatchData() {
+//            GlobalScope.launch(Dispatchers.IO) {
+//                Tournament.DEFAULT_KNOWN_LIST.forEach {
+//                    val current = tournamentDatabase.dao().getOrInsertDefault(it.url, defaultValue = it)
+//                    tournamentDatabase.dao().replaceMatches(
+//                        foreignKey = current.primaryKey,
+//                        newMatches = Array(5) { Match.random() }.toList()
+//                    )
+//                }
+//            }
+//        }
 
         private fun resetTournamentData() {
             // calling right now will produce "getDatabase called recursively" error
