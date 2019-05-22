@@ -11,6 +11,10 @@
 
 ### Текущие результаты
 
-Добавлены списки с прокруткой и подзаголовками, а также навигация через вкладки(табы). ViewHolder-ы собраны в общий пул и переиспользуются списками в разных вкладках. Дизайн пока условный и может поменяться.
+Добавлена информация о турнирах, текущий статус турнира и настройка автообновления. Обновляются информация о турнире в главном окне и открытая для просмотра сетка, полученные изменения вносятся в базу данных. 
 
-<img src="https://user-images.githubusercontent.com/8831683/55951033-b471e880-5c6f-11e9-8282-967a0dc497e7.png" width="400">|<img src="https://user-images.githubusercontent.com/8831683/55951048-bd62ba00-5c6f-11e9-9394-e3d53dc3c08c.png" width="400">
+<img src="https://user-images.githubusercontent.com/8831683/58195929-92de3500-7ce2-11e9-94da-c0293a67d5b6.png" width="400">|<img src="https://user-images.githubusercontent.com/8831683/58195980-aee1d680-7ce2-11e9-92dd-3266f8cb31b8.png" width="400">
+
+### Презентация по проекту
+
+[SC2Brackets.pdf](https://github.com/alexpdk/SC2Brackets/files/3208624/SC2Brackets.pdf)
